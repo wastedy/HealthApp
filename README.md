@@ -1,2 +1,2 @@
 # HealthApp
-An app to provide and receive health assistant at home
+An app to people provide and receive health assistant at home
