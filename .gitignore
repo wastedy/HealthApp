@@ -33,10 +33,6 @@ migrate_working_dir/
 .pub/
 /build/
 formulários.docx
-/linux/
-/macos/
-/web/
-/windows/
 
 # Symbolication related
 app.*.symbols
