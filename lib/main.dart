@@ -1,7 +1,17 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(LoginPage());
+  runApp(
+    MaterialApp(
+      title: "HealthApp",
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const LoginPage(),
+        '/register': (context) => const RegisterPage(),
+        '/forgotpassword': (context) => const ForgotPassword()
+      },
+    )
+  );
 }
 
 class LoginPage extends StatelessWidget {
@@ -9,14 +19,15 @@ class LoginPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-        home: Scaffold(
+    return Scaffold(
           body: Center(child: Builder(builder: (context) {
-            return Padding(
-              padding: EdgeInsets.symmetric(vertical: 121), // Change here if it overflows
+            return SingleChildScrollView(padding: EdgeInsets.symmetric(vertical: 40),
               child: Column(
                 children: [
-                    CircleAvatar(radius: 80, backgroundColor: const Color(0xD9D9D9D9), child: Text("Logo", style: TextStyle(color: Colors.black),textScaler: TextScaler.linear(2),)),
+                    Padding(
+                      padding: EdgeInsetsGeometry.symmetric(vertical: 10), 
+                      child: CircleAvatar(radius: 80, backgroundColor: const Color(0xD9D9D9D9), child: Text("Logo", style: TextStyle(color: Colors.grey),textScaler: TextScaler.linear(2),)),
+                    ),
                     Text("HealthApp", textAlign: TextAlign.center, textScaler: TextScaler.linear(5)),
                     Padding(
                       padding: EdgeInsets.symmetric(vertical: 20, horizontal: 30), 
@@ -30,10 +41,10 @@ class LoginPage extends StatelessWidget {
                       children: <Widget>[
                         Expanded(child: ListTile(
                           title: const Text("Lembrar por 30 dias?"),
-                          leading: CheckboxRememberLogin(),
+                          leading: CheckboxRememberLoginPage(),
                           ),
                         ),
-                        TextButton(child: Text("Esqueceu a senha?"), onPressed: () => (),),
+                        TextButton(child: Text("Esqueceu a senha?"), onPressed: () => ( Navigator.pushNamed(context, '/forgotpassword') ),),
                       ],
                     ),
                     Padding(
@@ -42,34 +53,56 @@ class LoginPage extends StatelessWidget {
                     ),
                     SizedBox(width: 350, child: FilledButton.icon(icon: Image.asset('assets/google-icon.png', width: 20, height: 20), onPressed: () => (), style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Color.fromARGB(217, 121, 119, 119))), label: Text("Entrar com o Google"))),
                     Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Text("Não possui conta?", textScaler: TextScaler.linear(1.5),),
-                      TextButton(child: Text("Registrar"), onPressed: () {},)
-                    ],)
+                        Text("Não possui conta?", textScaler: TextScaler.linear(1.5),),
+                        TextButton(child: Text("Registrar"), onPressed: () { Navigator.pushNamed(context, '/register'); },)
+                      ],
+                    )
                   ],
                 )
               );
             },
           )
         )
-      )
-    );
-  
+      );
   }
 }
-class CheckboxRememberLogin extends StatefulWidget {
-  const CheckboxRememberLogin({super.key});
+class CheckboxRememberLoginPage extends StatefulWidget {
+    const CheckboxRememberLoginPage({super.key});
 
-  @override
-  State<CheckboxRememberLogin> createState() => _CheckboxRememberLoginState();
+    @override
+    State<CheckboxRememberLoginPage> createState() => _CheckboxRememberLoginState();
 }
 
-class _CheckboxRememberLoginState extends State<CheckboxRememberLogin> {
-  bool isChecked = false;
+class _CheckboxRememberLoginState extends State<CheckboxRememberLoginPage> {
+    bool isChecked = false;
+    @override
+    Widget build(BuildContext context) {
+      return Checkbox(value: isChecked, onChanged: (value) => setState(() {
+        isChecked = value!;
+      }),);
+    }
+}
+
+class RegisterPage extends StatelessWidget {
+  const RegisterPage({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Checkbox(value: isChecked, onChanged: (value) => setState(() {
-      isChecked = value!;
-    }),);
+    return Scaffold(
+      appBar: AppBar(title: Text("Cadastro")),
+      body: Placeholder()
+    );
   }
 }
 
+class ForgotPassword extends StatelessWidget {
+  const ForgotPassword({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("Esqueci a senha")),
+      body: Placeholder()
+    );
+  }
+}
