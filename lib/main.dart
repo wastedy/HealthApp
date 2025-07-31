@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'registerpage.dart';
+import 'forgotpasswordpage.dart';
 
 void main() {
   runApp(
@@ -8,7 +10,7 @@ void main() {
       routes: {
         '/': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
-        '/forgotpassword': (context) => const ForgotPassword()
+        '/forgotpassword': (context) => const ForgotPasswordPage()
       },
     )
   );
@@ -27,28 +29,7 @@ class LoginPage extends StatelessWidget {
             children: [
               avatarLogoImage(radius: 80),
               Text("HealthApp", textAlign: TextAlign.center, textScaler: TextScaler.linear(5)),
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 20, horizontal: 30), 
-                child: TextFormField(decoration: InputDecoration(labelText: "Endereço de email", border: OutlineInputBorder(borderRadius: BorderRadius.circular(25))),),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 30), 
-                child: TextFormField(decoration: InputDecoration(labelText: "Senha", border: OutlineInputBorder(borderRadius: BorderRadius.circular(25))),),
-              ),
-              Row(mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Expanded(child: ListTile(
-                      title: const Text("Lembrar por 30 dias?"),
-                      leading: CheckboxRememberLoginPage(),
-                    ),
-                  ),
-                  TextButton(child: Text("Esqueceu a senha?"), onPressed: () => ( Navigator.pushNamed(context, '/forgotpassword') ),),
-                ],
-              ),
-              Padding(
-                padding: EdgeInsetsGeometry.symmetric(vertical: 20),
-                child: SizedBox(width: 350, child: FilledButton(onPressed: () => (), style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.green)), child: Text("Entrar"))),
-              ),
+              LoginForm(),
               loginWithGoogleButton(width: 350),
               Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Text("Não possui conta?", textScaler: TextScaler.linear(1.5),),
@@ -58,6 +39,114 @@ class LoginPage extends StatelessWidget {
             ],
           )
         )
+      )
+    );
+  }
+}
+
+class LoginForm extends StatefulWidget {
+  const LoginForm({super.key});
+
+  @override
+  State<LoginForm> createState() => _LoginFormState();
+}
+
+class _LoginFormState extends State<LoginForm> {
+  final _loginFormKey = GlobalKey<FormState>();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  bool is30DayLoginRememberChecked = false;
+  bool isPasswordVisible = true;
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+
+  }
+
+  String? loginFormValidator({required String? value, required String? inputType}) {
+    if (value == null || value.isEmpty) { return "Esse campo não pode estar vazio"; }
+    if (inputType == 'mail' && !value.contains("@")) {
+      return "Insira um email valido";
+    }
+    if (inputType == 'password') {
+      if (value.length < 5) {
+        return "Insira uma senha com pelo menos 5 dígitos";
+      }
+    }
+
+    return null;
+  }
+
+  void togglePasswordVisibility() {
+    setState(() {
+      isPasswordVisible = !isPasswordVisible;
+    });
+  }
+
+  Widget loginPageInputTextFormField({required TextEditingController controller, String? labelText, Widget? prefixIcon, required String? validator, String? hintText, required bool obscureText}) { 
+    var icon = Icon(Icons.cancel_outlined);
+    var onPressed = controller.clear;
+    if (validator == "password") {
+      icon = isPasswordVisible ?  Icon(Icons.visibility_off) : Icon(Icons.visibility);
+      onPressed = togglePasswordVisibility;
+    }
+    
+    return TextFormField(
+      controller: controller,
+      validator: (value) => loginFormValidator(value: value, inputType: validator),
+      obscureText: obscureText,
+      decoration: InputDecoration(
+        labelText: labelText,
+        prefixIcon: prefixIcon,
+        suffixIcon: IconButton(onPressed: onPressed, icon: icon),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(25)),
+        hintText: hintText,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(key: _loginFormKey, child: 
+      Column(
+        children: <Widget>[
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 20, horizontal: 30), 
+            child: loginPageInputTextFormField(validator: "mail", obscureText: false, controller: emailController, labelText: "Endereço de email", prefixIcon: Icon(Icons.mail_outline), hintText: "exemplo@exemplo.com")
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 10, horizontal: 30), 
+            child: loginPageInputTextFormField(validator: "password", obscureText: isPasswordVisible, controller: passwordController, labelText: "Senha", prefixIcon: Icon(Icons.lock_outline))
+          ),
+          Row(mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Expanded(child: ListTile(
+                  title: const Text("Lembrar por 30 dias?"),
+                  leading: Checkbox(value: is30DayLoginRememberChecked, onChanged: (value) => setState(() { 
+                    is30DayLoginRememberChecked = value!;
+                  })),
+                ),
+              ),
+              TextButton(child: Text("Esqueceu a senha?"), onPressed: () => ( Navigator.pushNamed(context, '/forgotpassword') ),),
+            ],
+          ),
+          Padding(
+            padding: EdgeInsetsGeometry.symmetric(vertical: 20),
+            child: SizedBox(
+              width: 350, 
+              child: FilledButton(
+                onPressed: () => {
+                  if(_loginFormKey.currentState!.validate()) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dados Enviados!")))
+                  }
+                }, 
+                style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.green)), 
+                child: Text("Entrar"))),
+          ),
+        ],
       )
     );
   }
@@ -83,158 +172,4 @@ Widget loginWithGoogleButton({required double? width}) {
       label: Text("Entrar com o Google")
     )
   );
-}
-
-class CheckboxRememberLoginPage extends StatefulWidget {
-  const CheckboxRememberLoginPage({super.key});
-
-  @override
-  State<CheckboxRememberLoginPage> createState() => _CheckboxRememberLoginState();
-}
-
-class _CheckboxRememberLoginState extends State<CheckboxRememberLoginPage> {
-  bool isChecked = false;
-  @override
-  Widget build(BuildContext context) {
-    return Checkbox(value: isChecked, onChanged: (value) => setState(() {
-          isChecked = value!;
-        }
-      ),
-    );
-  }
-}
-
-class RegisterPage extends StatelessWidget {
-  const RegisterPage({super.key});
-  final registerformbackgroundcolor = Colors.grey;
-  final registerpagebackgroundcolor = Colors.white;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Cadastro")),
-      body: Container(padding: EdgeInsets.symmetric(vertical: 20),
-        color: registerpagebackgroundcolor,
-        child: SingleChildScrollView(
-          child: Center(
-            child: Column(
-              children: [
-                avatarLogoImage(radius: 80),
-                Container(margin: EdgeInsets.symmetric(vertical: 50, horizontal: 10),
-                  decoration: BoxDecoration(color: registerformbackgroundcolor, borderRadius: BorderRadius.circular(25), border: Border.all(width: 10, color: registerformbackgroundcolor)),
-                  child: Padding(
-                    padding: EdgeInsetsGeometry.only(top: 20, bottom: 10), 
-                    child: Column(
-                      children: [
-                        Row(mainAxisSize: MainAxisSize.min, spacing: 10,
-                          children: [
-                            Expanded(child: TextFormField(decoration: InputDecoration(hintText: "Insira seu Nome", label: Text("Nome"), border: OutlineInputBorder(borderRadius: BorderRadius.circular(25))),),),
-                            Expanded(child: TextFormField(decoration: InputDecoration(hintText: "Insira seu Sobrenome", label: Text("Sobrenome"), border: OutlineInputBorder(borderRadius: BorderRadius.circular(25))),))
-                          ],
-                        ),
-                        Padding(
-                          padding: EdgeInsetsGeometry.symmetric(vertical: 30), 
-                          child: Row(
-                            children: [
-                              Expanded(child: TextFormField(decoration: InputDecoration(hintText: "exemplo@dominio.com", label: Text("Email"), border: OutlineInputBorder(borderRadius: BorderRadius.circular(25))),),)
-                            ],
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            SizedBox(
-                              width: 250,
-                              child: TextFormField(decoration: InputDecoration(hintText: "(00) 0000-0000", label: Text("Celular"), border: OutlineInputBorder(borderRadius: BorderRadius.circular(25))),),
-                            )
-                          ],
-                        ),
-                        Padding(
-                          padding: EdgeInsetsGeometry.symmetric(vertical: 20, horizontal: 20),
-                          child: Row(
-                            children: [
-                              Expanded(child: Text("Deseja utilizar o aplicativo ou trabalhar com ele?"),),
-                            ]
-                          ),
-                        ),
-                        Padding(
-                          padding: EdgeInsetsGeometry.symmetric(horizontal: 60),
-                          child: ClientOrWorkerRadioList(),
-                        ),
-                        Padding(
-                          padding: EdgeInsetsGeometry.only(top: 100),
-                          child: SizedBox(
-                            width: 400,
-                            height: 50,
-                            child: FilledButton(
-                              onPressed: () => (), 
-                              style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Color.fromARGB(217, 121, 119, 119))), 
-                              child: Text("Cadastrar!", textScaler: TextScaler.linear(2), style: TextStyle(color: Colors.white),)
-                            )
-                          ),
-                        ),
-                        
-
-                      ],
-                    )
-                  ),
-                )
-              ],
-            ),
-          )
-        ),
-      )
-    );
-  }
-}
-
-enum ClientOrWorker { client, worker }
-
-class ClientOrWorkerRadioList extends StatefulWidget {
-  const ClientOrWorkerRadioList({super.key});
-
-  @override
-  State<ClientOrWorkerRadioList> createState() => _ClientOrWorkerRadioListState();
-}
-
-class _ClientOrWorkerRadioListState extends State<ClientOrWorkerRadioList> {
-  ClientOrWorker? _clientOrWorker = ClientOrWorker.client;
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        Radio<ClientOrWorker>(
-          value: ClientOrWorker.client, 
-          groupValue: _clientOrWorker, 
-          onChanged: (ClientOrWorker? value) {
-            setState(() {
-              _clientOrWorker = value;
-            });
-          }
-        ),
-        Expanded(child: Text("Cliente")),
-        Radio<ClientOrWorker>(
-          value: ClientOrWorker.worker, 
-          groupValue: _clientOrWorker, 
-          onChanged: (ClientOrWorker? value) {
-            setState(() {
-              _clientOrWorker = value;
-            });
-          }
-        ),
-        Expanded(child: Text("Profissional"))
-      ],
-    );
-  }
-}
-
-class ForgotPassword extends StatelessWidget {
-  const ForgotPassword({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Esqueci a senha")),
-      body: Placeholder()
-    );
-  }
 }
