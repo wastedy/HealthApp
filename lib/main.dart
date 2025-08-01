@@ -58,14 +58,6 @@ class _LoginFormState extends State<LoginForm> {
   bool is30DayLoginRememberChecked = false;
   bool isPasswordVisible = true;
 
-  @override
-  void dispose() {
-    emailController.dispose();
-    passwordController.dispose();
-    super.dispose();
-
-  }
-
   String? loginFormValidator({required String? value, required String? inputType}) {
     if (value == null || value.isEmpty) { return "Esse campo não pode estar vazio"; }
     if (inputType == 'mail' && !value.contains("@")) {
