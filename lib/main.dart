@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'registerpage.dart';
 import 'forgotpasswordpage.dart';
+import 'homepage.dart';
 
 void main() {
   runApp(
@@ -10,7 +11,8 @@ void main() {
       routes: {
         '/': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
-        '/forgotpassword': (context) => const ForgotPasswordPage()
+        '/forgotpassword': (context) => const ForgotPasswordPage(),
+        '/home': (context) => const HomePage(),
       },
     )
   );
@@ -132,7 +134,8 @@ class _LoginFormState extends State<LoginForm> {
               child: FilledButton(
                 onPressed: () => {
                   if(_loginFormKey.currentState!.validate()) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dados Enviados!")))
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dados Enviados!"))),
+                    Navigator.pushNamed(context, '/home')
                   }
                 }, 
                 style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.green)), 
