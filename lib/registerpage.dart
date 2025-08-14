@@ -60,6 +60,15 @@ class _RegisterFormState extends State<RegisterForm> {
   final today = DateTime.now();
   bool isPasswordVisible = true;
   ClientOrWorker? _clientOrWorker = ClientOrWorker.client;
+  List<TextEditingController?> controllers = [];
+
+  @override
+  void dispose() {
+    for (var controller in controllers) {
+      controller?.dispose();
+    }
+    super.dispose();
+  }
 
   String? registerFormValidator({required String? value, required String? validator}) {
     if (value == null || value.isEmpty) { return "Esse campo não pode estar vazio"; }
@@ -95,6 +104,7 @@ class _RegisterFormState extends State<RegisterForm> {
     var icon = Icon(Icons.cancel_outlined);
     var onPressed = controller.clear;
     var readOnly = false;
+    controllers.add(controller);
     if (validator == "password") {
       icon = isPasswordVisible ? Icon(Icons.visibility_off) : Icon(Icons.visibility);
       onPressed = togglePasswordVisibility;

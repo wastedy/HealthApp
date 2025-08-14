@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'registerpage.dart';
 import 'forgotpasswordpage.dart';
-import 'homepage.dart';
+import 'mainpage.dart';
 
 void main() {
   runApp(
     MaterialApp(
       title: "HealthApp",
-      initialRoute: '/',
+      initialRoute: '/login',
       routes: {
-        '/': (context) => const LoginPage(),
+        '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
         '/forgotpassword': (context) => const ForgotPasswordPage(),
-        '/home': (context) => const HomePage(),
+        '/': (context) => const MainPage(),
       },
     )
   );
@@ -59,6 +59,15 @@ class _LoginFormState extends State<LoginForm> {
   final passwordController = TextEditingController();
   bool is30DayLoginRememberChecked = false;
   bool isPasswordVisible = true;
+  List<TextEditingController?> controllers = [];
+
+  @override
+  void dispose() {
+    for (var controller in controllers) {
+      controller?.dispose();
+    }
+    super.dispose();
+  }
 
   String? loginFormValidator({required String? value, required String? inputType}) {
     if (value == null || value.isEmpty) { return "Esse campo não pode estar vazio"; }
@@ -87,7 +96,7 @@ class _LoginFormState extends State<LoginForm> {
       icon = isPasswordVisible ?  Icon(Icons.visibility_off) : Icon(Icons.visibility);
       onPressed = togglePasswordVisibility;
     }
-    
+    controllers.add(controller);
     return TextFormField(
       controller: controller,
       validator: (value) => loginFormValidator(value: value, inputType: validator),
@@ -135,7 +144,7 @@ class _LoginFormState extends State<LoginForm> {
                 onPressed: () => {
                   if(_loginFormKey.currentState!.validate()) {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dados Enviados!"))),
-                    Navigator.pushNamed(context, '/home')
+                    Navigator.popAndPushNamed(context, '/')
                   }
                 }, 
                 style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.green)), 
