@@ -45,3 +45,6 @@ app.*.map.json
 /android/app/release
 
 formulários.docx
+
+# Firebase related
+firebase.json

@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'main.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class RegisterPage extends StatelessWidget {
   const RegisterPage({super.key});
@@ -49,15 +51,19 @@ class RegisterForm extends StatefulWidget {
 
 class _RegisterFormState extends State<RegisterForm> {
   final _registerFormKey = GlobalKey<FormState>();
-  final nameController = TextEditingController();
-  final surnameController = TextEditingController();
-  final mailController = TextEditingController();
-  final phoneController = TextEditingController();
-  final passwordController = TextEditingController();
-  final birthdayController = TextEditingController();
-  final cpfController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _surnameController = TextEditingController();
+  final _mailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _birthdayController = TextEditingController();
+  final _cpfController = TextEditingController();
   final filledTextColor = const Color.fromARGB(255, 146, 142, 142);
   final today = DateTime.now();
+  final _auth = FirebaseAuth.instance;
+  final _db = FirebaseFirestore.instance;
+  bool isloading = false;
+  User? user;
   bool isPasswordVisible = true;
   ClientOrWorker? _clientOrWorker = ClientOrWorker.client;
   List<TextEditingController?> controllers = [];
@@ -76,8 +82,8 @@ class _RegisterFormState extends State<RegisterForm> {
       return "Insira um email valido";
     }
     if (validator == 'password') {
-      if (value.length < 5) {
-        return "Insira uma senha com pelo menos 5 dígitos";
+      if (value.length < 6) {
+        return "Insira uma senha com pelo menos 6 dígitos";
       }
     }
     if (validator == 'cpf') {
@@ -86,7 +92,7 @@ class _RegisterFormState extends State<RegisterForm> {
       }
     }
     if (validator == 'phone') {
-      if (value.length != 10) {
+      if (value.length != 11) {
         return "Insira um número valido";
       }
     }
@@ -98,7 +104,13 @@ class _RegisterFormState extends State<RegisterForm> {
     setState(() {
       isPasswordVisible = !isPasswordVisible;
     });
-  } 
+  }
+
+  void hasUser(User? user) {
+    if (user != null) {
+      Navigator.popAndPushNamed(context, '/home');
+    }
+  }
 
   Widget registerPageInputTextFormField({required TextEditingController controller, Widget? label, Widget? prefixIcon, String? validator, GestureTapCallback? onTap, String? hintText, required bool obscureText}) { 
     var icon = Icon(Icons.cancel_outlined);
@@ -120,7 +132,7 @@ class _RegisterFormState extends State<RegisterForm> {
           var year = selectedDate.year;
           if (day.length < 2) { day = "0$day"; }
           if (month.length < 2) { month = "0$month"; }
-          birthdayController.text = "$day/$month/$year";
+         _birthdayController.text = "$day/$month/$year";
         }
       };
     }
@@ -150,35 +162,35 @@ class _RegisterFormState extends State<RegisterForm> {
         children: [
           Row(mainAxisSize: MainAxisSize.min, spacing: 5,
             children: [
-              Expanded(child: registerPageInputTextFormField(prefixIcon: Icon(Icons.person), controller: nameController, obscureText: false, hintText: "Insira seu Nome", label: Text("Nome")),),
-              Expanded(child: registerPageInputTextFormField(controller: surnameController, obscureText: false, hintText: "Insira seu Sobrenome", label: Text("Sobrenome"))),
+              Expanded(child: registerPageInputTextFormField(prefixIcon: Icon(Icons.person), controller: _nameController, obscureText: false, hintText: "Insira seu Nome", label: Text("Nome")),),
+              Expanded(child: registerPageInputTextFormField(controller: _surnameController, obscureText: false, hintText: "Insira seu Sobrenome", label: Text("Sobrenome"))),
             ],
           ),
           Padding(
             padding: EdgeInsetsGeometry.symmetric(vertical: 30), 
             child: Row(
               children: [
-                Expanded(child: registerPageInputTextFormField(prefixIcon: Icon(Icons.email), validator: 'mail', controller: mailController, obscureText: false, hintText: "exemplo@exemplo.com", label: Text("Email")),)
+                Expanded(child: registerPageInputTextFormField(prefixIcon: Icon(Icons.email), validator: 'mail', controller: _mailController, obscureText: false, hintText: "exemplo@exemplo.com", label: Text("Email")),)
               ],
             ),
           ),
           Padding(padding: EdgeInsetsGeometry.only(bottom: 30), child: 
             Row(
               children: [
-                Expanded(child: registerPageInputTextFormField(prefixIcon: Icon(Icons.south_america_outlined), validator: 'cpf', controller: cpfController, obscureText: false, hintText: "000.000.000-00", label: Text("CPF"))),
+                Expanded(child: registerPageInputTextFormField(prefixIcon: Icon(Icons.south_america_outlined), validator: 'cpf', controller: _cpfController, obscureText: false, hintText: "000.000.000-00", label: Text("CPF"))),
               ],
             )
           ),
           Row(spacing: 3,
             children: [
-              SizedBox(width: 207, child: registerPageInputTextFormField(prefixIcon: Icon(Icons.phone_android_rounded), validator: 'phone', controller: phoneController, obscureText: false, hintText: "(00) 0000-0000", label: Text("Celular"))),
-              Expanded(child: registerPageInputTextFormField(validator: 'birthday', controller: birthdayController, obscureText: false, hintText: "dd/mm/aaaa", label: Text("Data de nascimento")),)
+              SizedBox(width: 207, child: registerPageInputTextFormField(prefixIcon: Icon(Icons.phone_android_rounded), validator: 'phone', controller: _phoneController, obscureText: false, hintText: "(00) 0000-0000", label: Text("Celular"))),
+              Expanded(child: registerPageInputTextFormField(validator: 'birthday', controller: _birthdayController, obscureText: false, hintText: "dd/mm/aaaa", label: Text("Data de nascimento")),)
             ],
           ),
           Padding(padding: EdgeInsetsGeometry.only(top: 30), child: 
             Row(
               children: [
-                Expanded(child: registerPageInputTextFormField(prefixIcon: Icon(Icons.lock), validator: 'password', controller: passwordController, obscureText: isPasswordVisible, hintText: "******", label: Text("Senha"))),
+                Expanded(child: registerPageInputTextFormField(prefixIcon: Icon(Icons.lock), validator: 'password', controller: _passwordController, obscureText: isPasswordVisible, hintText: "******", label: Text("Senha"))),
               ],
             )
           ),
@@ -220,14 +232,22 @@ class _RegisterFormState extends State<RegisterForm> {
           ),
           Padding(
             padding: EdgeInsetsGeometry.only(top: 40),
-            child: SizedBox(
+            child: isloading ? const CircularProgressIndicator() : SizedBox(
               width: 400,
               height: 50,
               child: FilledButton(
-                onPressed: () => {
+                onPressed: () async {
+                  setState(() {
+                    isloading = true;
+                  });
                   if(_registerFormKey.currentState!.validate()) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dados Enviados!")))
+                    user = await registerFirebase(_mailController.text, _passwordController.text, _nameController.text, _surnameController.text, _cpfController.text, _phoneController.text);
+                    hasUser(user);
+                    
                   }
+                  setState(() {
+                    isloading = false;
+                  });
                 }, 
                 style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Color.fromARGB(217, 121, 119, 119))), 
                 child: Text("Cadastrar!", textScaler: TextScaler.linear(2), style: TextStyle(color: Colors.black),)
@@ -239,5 +259,43 @@ class _RegisterFormState extends State<RegisterForm> {
         ],
       ),
     );
+  }
+
+  void notifyAuthError(String error, {required Color colortext, required Color colorbar}) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error, style: TextStyle(color: colortext), textScaler: TextScaler.linear(1.2),), backgroundColor: colorbar,));
+  }
+  
+  Future<User?> registerFirebase(String email, String password, name, surname, cpf, phone) async {
+    try {
+      UserCredential credential = await _auth.createUserWithEmailAndPassword(email: email, password: password);
+      await createFirestore(credential.user!.uid, name, surname, cpf, phone);
+      return credential.user;
+
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'invalid-email':
+          notifyAuthError("Email inválido", colortext: Colors.white, colorbar: Colors.red);
+          break;
+        case 'weak-password':
+          notifyAuthError("Senha fraca", colortext: Colors.white, colorbar: Colors.red);
+          break;
+        case 'too-many-requests':
+          break;
+        default:
+          debugPrint(e.toString());
+          break;
+      }
+      debugPrint(e.toString());
+    }
+    return null;
+  }
+  
+  Future<void> createFirestore(String uid, String name, String surname, String cpf, String phonenumber) async {
+    await _db.collection("users").doc(uid).set({
+      'Name': name,
+      'Surname': surname,
+      'CPF': cpf,
+      'Phone': phonenumber
+    });
   }
 }

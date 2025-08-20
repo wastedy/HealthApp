@@ -1,18 +1,34 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'registerpage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'forgotpasswordpage.dart';
 import 'mainpage.dart';
+import 'firebase_options.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  String inicio = '/login';
+  User? user = FirebaseAuth.instance.currentUser;
+  if (user != null) {
+    inicio = '/home';
+
+  }
+
   runApp(
     MaterialApp(
       title: "HealthApp",
-      initialRoute: '/login',
+      initialRoute: inicio,
       routes: {
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
         '/forgotpassword': (context) => const ForgotPasswordPage(),
-        '/': (context) => const MainPage(),
+        '/home': (context) => const MainPage(),
       },
     )
   );
@@ -32,7 +48,6 @@ class LoginPage extends StatelessWidget {
               avatarLogoImage(radius: 80),
               Text("HealthApp", textAlign: TextAlign.center, textScaler: TextScaler.linear(5)),
               LoginForm(),
-              loginWithGoogleButton(width: 350),
               Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Text("Não possui conta?", textScaler: TextScaler.linear(1.5),),
                   TextButton(child: Text("Registrar"), onPressed: () { Navigator.pushNamed(context, '/register'); },)
@@ -54,11 +69,13 @@ class LoginForm extends StatefulWidget {
 }
 
 class _LoginFormState extends State<LoginForm> {
+  final _auth = FirebaseAuth.instance;
   final _loginFormKey = GlobalKey<FormState>();
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  bool is30DayLoginRememberChecked = false;
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  User? user;
   bool isPasswordVisible = true;
+  bool isLoadingGoogleSignIn = false;
   List<TextEditingController?> controllers = [];
 
   @override
@@ -111,6 +128,53 @@ class _LoginFormState extends State<LoginForm> {
     );
   }
 
+  void isloggedIn(User? user) {
+    if (user != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Logado com Sucesso!"), backgroundColor: Colors.green,));
+      Navigator.popAndPushNamed(context, '/home');
+    }
+  }
+
+  void notifyAuthError(String error, {required Color colortext, required Color colorbar}) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error, style: TextStyle(color: colortext), textScaler: TextScaler.linear(1.2),), backgroundColor: colorbar,));
+  }
+
+  Future<User?> loginWithGoogle() async {
+    try {
+      final googleUser = await GoogleSignIn().signIn();
+      final googleAuth = await googleUser?.authentication;
+      final credential = GoogleAuthProvider.credential(idToken: googleAuth?.idToken, accessToken: googleAuth?.accessToken);
+
+      UserCredential usercred = await _auth.signInWithCredential(credential);
+      return usercred.user;
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+    return null;
+  }
+
+  Future<User?> loginFirebase(String email, String password) async {
+    try {
+      UserCredential credential = await _auth.signInWithEmailAndPassword(email: email, password: password);
+      return credential.user;
+
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'invalid-email':
+          notifyAuthError('Email Inválido.', colorbar: Colors.red, colortext: Colors.white);
+          break;
+        case 'invalid-credential':
+          notifyAuthError('Usuário e/ou senha inválidos', colorbar: Colors.blueGrey, colortext: Colors.white);
+        case 'too-many-requests':
+          notifyAuthError("Muitas tentativas, tente novamente mais tarde", colortext: Colors.white, colorbar: Colors.blue);
+        default:
+          debugPrint(e.toString());
+          break;
+      }
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Form(key: _loginFormKey, child: 
@@ -118,21 +182,14 @@ class _LoginFormState extends State<LoginForm> {
         children: <Widget>[
           Padding(
             padding: EdgeInsets.symmetric(vertical: 20, horizontal: 30), 
-            child: loginPageInputTextFormField(validator: "mail", obscureText: false, controller: emailController, labelText: "Endereço de email", prefixIcon: Icon(Icons.mail_outline), hintText: "exemplo@exemplo.com")
+            child: loginPageInputTextFormField(validator: "mail", obscureText: false, controller: _emailController, labelText: "Endereço de email", prefixIcon: Icon(Icons.mail_outline), hintText: "exemplo@exemplo.com")
           ),
           Padding(
             padding: EdgeInsets.symmetric(vertical: 10, horizontal: 30), 
-            child: loginPageInputTextFormField(validator: "password", obscureText: isPasswordVisible, controller: passwordController, labelText: "Senha", prefixIcon: Icon(Icons.lock_outline))
+            child: loginPageInputTextFormField(validator: "password", obscureText: isPasswordVisible, controller: _passwordController, labelText: "Senha", prefixIcon: Icon(Icons.lock_outline))
           ),
           Row(mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Expanded(child: ListTile(
-                  title: const Text("Lembrar por 30 dias?"),
-                  leading: Checkbox(value: is30DayLoginRememberChecked, onChanged: (value) => setState(() { 
-                    is30DayLoginRememberChecked = value!;
-                  })),
-                ),
-              ),
               TextButton(child: Text("Esqueceu a senha?"), onPressed: () => ( Navigator.pushNamed(context, '/forgotpassword') ),),
             ],
           ),
@@ -141,15 +198,35 @@ class _LoginFormState extends State<LoginForm> {
             child: SizedBox(
               width: 350, 
               child: FilledButton(
-                onPressed: () => {
+                onPressed: () async {
                   if(_loginFormKey.currentState!.validate()) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Dados Enviados!"))),
-                    Navigator.popAndPushNamed(context, '/')
+                    user = await loginFirebase(_emailController.text, _passwordController.text);
+                    isloggedIn(user);
                   }
                 }, 
                 style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.green)), 
                 child: Text("Entrar"))),
           ),
+          isLoadingGoogleSignIn ? const CircularProgressIndicator(padding: EdgeInsets.all(6),) : SizedBox(
+            width: 350, 
+            child: FilledButton.icon(
+              icon: Image.asset('assets/google-icon.png', width: 20, height: 20), 
+              onPressed: () async {
+                setState(() {
+                  isLoadingGoogleSignIn = true;
+                });
+                user = await loginWithGoogle();
+                isloggedIn(user);
+                setState(() {
+                  isLoadingGoogleSignIn = false;
+                });
+              }, 
+              style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Color.fromARGB(217, 121, 119, 119))), 
+              label: Text("Entrar com o Google")
+            )
+          ),
+
+
         ],
       )
     );
@@ -166,14 +243,4 @@ Widget avatarLogoImage({required double? radius}) => CircleAvatar(
   )
 );
 
-Widget loginWithGoogleButton({required double? width}) {
-  return SizedBox(
-    width: width, 
-    child: FilledButton.icon(
-      icon: Image.asset('assets/google-icon.png', width: 20, height: 20), 
-      onPressed: () => (), 
-      style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Color.fromARGB(217, 121, 119, 119))), 
-      label: Text("Entrar com o Google")
-    )
-  );
-}
+
