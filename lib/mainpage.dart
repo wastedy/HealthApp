@@ -22,6 +22,11 @@ class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
   static const List<Widget> _navBarWidgets = <Widget>[HomePage(),  SchedulePage(), AccountPage()];
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+  }
+
   void _onTapBottomNavbar(int index) {
     setState(() {
       _selectedIndex = index;

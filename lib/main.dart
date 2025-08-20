@@ -14,10 +14,8 @@ Future<void> main() async {
   );
 
   String inicio = '/login';
-  User? user = FirebaseAuth.instance.currentUser;
-  if (user != null) {
+  if (FirebaseAuth.instance.currentUser != null) {
     inicio = '/home';
-
   }
 
   runApp(
@@ -50,9 +48,14 @@ class LoginPage extends StatelessWidget {
               LoginForm(),
               Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Text("Não possui conta?", textScaler: TextScaler.linear(1.5),),
-                  TextButton(child: Text("Registrar"), onPressed: () { Navigator.pushNamed(context, '/register'); },)
+                  TextButton(child: Text("Registrar", style: TextStyle(fontSize: 20),), onPressed: () { Navigator.pushNamed(context, '/register'); },)
                 ],
-              )
+              ),
+              Row(mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  TextButton(child: Text("Esqueceu a senha?", style: TextStyle(fontSize: 20),), onPressed: () => ( Navigator.pushNamed(context, '/forgotpassword') ),),
+                ],
+              ),
             ],
           )
         )
@@ -76,7 +79,13 @@ class _LoginFormState extends State<LoginForm> {
   User? user;
   bool isPasswordVisible = true;
   bool isLoadingGoogleSignIn = false;
+  bool isLoadingSignIn = false;
   List<TextEditingController?> controllers = [];
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+  }
 
   @override
   void dispose() {
@@ -84,6 +93,7 @@ class _LoginFormState extends State<LoginForm> {
       controller?.dispose();
     }
     super.dispose();
+    
   }
 
   String? loginFormValidator({required String? value, required String? inputType}) {
@@ -131,7 +141,9 @@ class _LoginFormState extends State<LoginForm> {
   void isloggedIn(User? user) {
     if (user != null) {
       notifyAuthError('Logado com sucesso!', colortext: Colors.white, colorbar: Colors.green);
-      Navigator.popAndPushNamed(context, '/home');
+      if (context.mounted) {
+        Navigator.of(context).popAndPushNamed('/home');
+      }
     }
   }
 
@@ -188,26 +200,27 @@ class _LoginFormState extends State<LoginForm> {
             padding: EdgeInsets.symmetric(vertical: 10, horizontal: 30), 
             child: loginPageInputTextFormField(validator: "password", obscureText: isPasswordVisible, controller: _passwordController, labelText: "Senha", prefixIcon: Icon(Icons.lock_outline))
           ),
-          Row(mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              TextButton(child: Text("Esqueceu a senha?"), onPressed: () => ( Navigator.pushNamed(context, '/forgotpassword') ),),
-            ],
-          ),
           Padding(
             padding: EdgeInsetsGeometry.symmetric(vertical: 20),
-            child: SizedBox(
+            child: isLoadingSignIn ? const CircularProgressIndicator.adaptive(padding: EdgeInsets.all(6),) : SizedBox(
               width: 350, 
               child: FilledButton(
                 onPressed: () async {
+                  setState(() {
+                    isLoadingSignIn = true;
+                  });
                   if(_loginFormKey.currentState!.validate()) {
                     user = await loginFirebase(_emailController.text, _passwordController.text);
                     isloggedIn(user);
                   }
+                  setState(() {
+                    isLoadingSignIn = false;
+                  });
                 }, 
                 style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.green)), 
                 child: Text("Entrar"))),
           ),
-          isLoadingGoogleSignIn ? const CircularProgressIndicator(padding: EdgeInsets.all(6),) : SizedBox(
+          isLoadingGoogleSignIn ? const CircularProgressIndicator.adaptive(padding: EdgeInsets.all(6),) : SizedBox(
             width: 350, 
             child: FilledButton.icon(
               icon: Image.asset('assets/google-icon.png', width: 20, height: 20), 

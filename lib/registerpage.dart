@@ -67,13 +67,19 @@ class _RegisterFormState extends State<RegisterForm> {
   bool isPasswordVisible = true;
   ClientOrWorker? _clientOrWorker = ClientOrWorker.client;
   List<TextEditingController?> controllers = [];
+  
+  //Dispose giving too much headache
+  //@override
+  //void dispose() {
+    //for (var controller in controllers) {
+      //controller?.dispose();
+    //}
+    //super.dispose();
+  //}
 
   @override
-  void dispose() {
-    for (var controller in controllers) {
-      controller?.dispose();
-    }
-    super.dispose();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
   }
 
   String? registerFormValidator({required String? value, required String? validator}) {
@@ -107,12 +113,12 @@ class _RegisterFormState extends State<RegisterForm> {
   }
 
   void hasUser(User? user) {
-    if (user != null) {
-      Navigator.popAndPushNamed(context, '/home');
+    if (user != null && context.mounted) {
+      Navigator.of(context).popAndPushNamed('/home');
     }
   }
 
-  Widget registerPageInputTextFormField({required TextEditingController controller, Widget? label, Widget? prefixIcon, String? validator, GestureTapCallback? onTap, String? hintText, required bool obscureText}) { 
+  Widget registerPageInputTextFormField({TextInputType? keyboardType, int? maxLength, required TextEditingController controller, Widget? label, Widget? prefixIcon, String? validator, GestureTapCallback? onTap, String? hintText, required bool obscureText}) { 
     var icon = Icon(Icons.cancel_outlined);
     var onPressed = controller.clear;
     var readOnly = false;
@@ -139,9 +145,12 @@ class _RegisterFormState extends State<RegisterForm> {
     
     return TextFormField(
       controller: controller,
+      buildCounter: (BuildContext context, { int? currentLength, int? maxLength, bool? isFocused }) => null,
       validator: (value) => registerFormValidator(value: value, validator: validator),
       obscureText: obscureText,
       onTap: onTap,
+      maxLength: maxLength,
+      keyboardType: keyboardType,
       readOnly: readOnly,
       decoration: InputDecoration(
         filled: true,
@@ -162,35 +171,35 @@ class _RegisterFormState extends State<RegisterForm> {
         children: [
           Row(mainAxisSize: MainAxisSize.min, spacing: 5,
             children: [
-              Expanded(child: registerPageInputTextFormField(prefixIcon: Icon(Icons.person), controller: _nameController, obscureText: false, hintText: "Insira seu Nome", label: Text("Nome")),),
-              Expanded(child: registerPageInputTextFormField(controller: _surnameController, obscureText: false, hintText: "Insira seu Sobrenome", label: Text("Sobrenome"))),
+              Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.name, prefixIcon: Icon(Icons.person), controller: _nameController, obscureText: false, hintText: "Insira seu Nome", label: Text("Nome")),),
+              Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.name, controller: _surnameController, obscureText: false, hintText: "Insira seu Sobrenome", label: Text("Sobrenome"))),
             ],
           ),
           Padding(
             padding: EdgeInsetsGeometry.symmetric(vertical: 30), 
             child: Row(
               children: [
-                Expanded(child: registerPageInputTextFormField(prefixIcon: Icon(Icons.email), validator: 'mail', controller: _mailController, obscureText: false, hintText: "exemplo@exemplo.com", label: Text("Email")),)
+                Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.emailAddress, prefixIcon: Icon(Icons.email), validator: 'mail', controller: _mailController, obscureText: false, hintText: "exemplo@exemplo.com", label: Text("Email")),)
               ],
             ),
           ),
           Padding(padding: EdgeInsetsGeometry.only(bottom: 30), child: 
             Row(
               children: [
-                Expanded(child: registerPageInputTextFormField(prefixIcon: Icon(Icons.south_america_outlined), validator: 'cpf', controller: _cpfController, obscureText: false, hintText: "000.000.000-00", label: Text("CPF"))),
+                Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.number, maxLength: 11, prefixIcon: Icon(Icons.south_america_outlined), validator: 'cpf', controller: _cpfController, obscureText: false, hintText: "000.000.000-00", label: Text("CPF"))),
               ],
             )
           ),
           Row(spacing: 3,
             children: [
-              SizedBox(width: 207, child: registerPageInputTextFormField(prefixIcon: Icon(Icons.phone_android_rounded), validator: 'phone', controller: _phoneController, obscureText: false, hintText: "(00) 0000-0000", label: Text("Celular"))),
+              SizedBox(width: 207, child: registerPageInputTextFormField(keyboardType: TextInputType.phone, maxLength: 11, prefixIcon: Icon(Icons.phone_android_rounded), validator: 'phone', controller: _phoneController, obscureText: false, hintText: "(00) 0000-0000", label: Text("Celular"))),
               Expanded(child: registerPageInputTextFormField(validator: 'birthday', controller: _birthdayController, obscureText: false, hintText: "dd/mm/aaaa", label: Text("Data de nascimento")),)
             ],
           ),
           Padding(padding: EdgeInsetsGeometry.only(top: 30), child: 
             Row(
               children: [
-                Expanded(child: registerPageInputTextFormField(prefixIcon: Icon(Icons.lock), validator: 'password', controller: _passwordController, obscureText: isPasswordVisible, hintText: "******", label: Text("Senha"))),
+                Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.text, prefixIcon: Icon(Icons.lock), validator: 'password', controller: _passwordController, obscureText: isPasswordVisible, hintText: "******", label: Text("Senha"))),
               ],
             )
           ),
@@ -243,7 +252,6 @@ class _RegisterFormState extends State<RegisterForm> {
                   if(_registerFormKey.currentState!.validate()) {
                     user = await registerFirebase(_mailController.text, _passwordController.text, _nameController.text, _surnameController.text, _cpfController.text, _phoneController.text);
                     hasUser(user);
-                    
                   }
                   setState(() {
                     isloading = false;
@@ -279,7 +287,11 @@ class _RegisterFormState extends State<RegisterForm> {
         case 'weak-password':
           notifyAuthError("Senha fraca", colortext: Colors.white, colorbar: Colors.red);
           break;
+        case 'email-already-in-use':
+          notifyAuthError("Já existe uma conta com esse email!", colortext: Colors.white, colorbar: Colors.red);
+          break;
         case 'too-many-requests':
+          notifyAuthError("Muitas tentativas, tente novamente mais tarde", colortext: Colors.black, colorbar: Colors.grey);
           break;
         default:
           debugPrint(e.toString());
