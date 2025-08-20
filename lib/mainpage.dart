@@ -89,14 +89,14 @@ class _HomePageState extends State<HomePage> {
         Padding(padding: EdgeInsetsGeometry.only(top: 20, left: 20, right: 20), 
         child: Row(
           children: [
-            Expanded(child: Text("Seja Bem-Vindo(a)", style: TextStyle(color: Colors.white), textScaler: TextScaler.linear(3))),
+            FittedBox(child: Text("Seja Bem-Vindo(a)", style: TextStyle(color: Colors.white, fontSize: 40))),
           ],
           ),
         ),
 
         Row(children: [
           Expanded(child: Padding(padding: EdgeInsetsGeometry.only(top: 550, left: 20, right: 20), 
-            child: Text("Primeira vez?\nSolicite o agendamento agora!", style: TextStyle(color: Colors.white), textScaler: TextScaler.linear(1.9),),
+            child: Text("Primeira vez?\nSolicite o agendamento agora!", style: TextStyle(color: Colors.white, fontSize: 25)),
             )
           )
           ],

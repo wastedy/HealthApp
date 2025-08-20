@@ -262,7 +262,7 @@ class _RegisterFormState extends State<RegisterForm> {
   }
 
   void notifyAuthError(String error, {required Color colortext, required Color colorbar}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error, style: TextStyle(color: colortext), textScaler: TextScaler.linear(1.2),), backgroundColor: colorbar,));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(behavior: SnackBarBehavior.floating, showCloseIcon: true, content: Text(error, style: TextStyle(color: colortext), textScaler: TextScaler.linear(1.2),), backgroundColor: colorbar,));
   }
   
   Future<User?> registerFirebase(String email, String password, name, surname, cpf, phone) async {

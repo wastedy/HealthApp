@@ -48,3 +48,4 @@ formulários.docx
 
 # Firebase related
 firebase.json
+lib/firebase_options.dart
