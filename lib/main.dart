@@ -5,13 +5,21 @@ import 'registerpage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'forgotpasswordpage.dart';
 import 'mainpage.dart';
-import 'firebase_options.dart';
+import 'config/firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  FirebaseAuth.instance.authStateChanges().listen((User? user) {
+    if (user == null) {
+      debugPrint("[Firebase Auth] User is signed out");
+    }
+    else {
+      debugPrint("[Firebase Auth] User is signed in");
+    }
+  });
 
   String inicio = '/login';
   if (FirebaseAuth.instance.currentUser != null) {
@@ -53,7 +61,7 @@ class LoginPage extends StatelessWidget {
               ),
               Row(mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  TextButton(child: Text("Esqueceu a senha?", style: TextStyle(fontSize: 20),), onPressed: () => ( Navigator.pushNamed(context, '/forgotpassword') ),),
+                  TextButton(child: Text("Esqueci a senha", style: TextStyle(fontSize: 20),), onPressed: () => ( Navigator.pushNamed(context, '/forgotpassword') ),),
                 ],
               ),
             ],
@@ -76,25 +84,23 @@ class _LoginFormState extends State<LoginForm> {
   final _loginFormKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  String _email = "";
+  String _password = "";
   User? user;
   bool isPasswordVisible = true;
   bool isLoadingGoogleSignIn = false;
   bool isLoadingSignIn = false;
   List<TextEditingController?> controllers = [];
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-  }
-
-  @override
+  //TODO: Dispose not working properly and giving me headaches
+  /*@override
   void dispose() {
     for (var controller in controllers) {
       controller?.dispose();
     }
     super.dispose();
     
-  }
+  }*/
 
   String? loginFormValidator({required String? value, required String? inputType}) {
     if (value == null || value.isEmpty) { return "Esse campo não pode estar vazio"; }
@@ -105,8 +111,10 @@ class _LoginFormState extends State<LoginForm> {
       if (value.length < 5) {
         return "Insira uma senha com pelo menos 5 dígitos";
       }
+      _email = _emailController.text;
+    _password = _passwordController.text;
     }
-
+    
     return null;
   }
 
@@ -139,36 +147,35 @@ class _LoginFormState extends State<LoginForm> {
   }
 
   void isloggedIn(User? user) {
-    if (user != null) {
+    if (user != null && context.mounted) {
       notifyAuthError('Logado com sucesso!', colortext: Colors.white, colorbar: Colors.green);
-      if (context.mounted) {
-        Navigator.of(context).popAndPushNamed('/home');
-      }
+      Navigator.pushReplacementNamed(context, '/home');
     }
   }
 
   void notifyAuthError(String error, {required Color colortext, required Color colorbar}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(behavior: SnackBarBehavior.floating, showCloseIcon: true, content: Text(error, style: TextStyle(color: colortext), textScaler: TextScaler.linear(1.2),), backgroundColor: colorbar,));
+    ScaffoldMessenger.of(context).removeCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(duration: Duration(seconds: 2), behavior: SnackBarBehavior.floating, showCloseIcon: true, content: Text(error, style: TextStyle(color: colortext), textScaler: TextScaler.linear(1.2),), backgroundColor: colorbar,));
   }
 
-  Future<User?> loginWithGoogle() async {
+  Future<void> loginWithGoogle() async {
     try {
+      
       final googleUser = await GoogleSignIn().signIn();
       final googleAuth = await googleUser?.authentication;
       final credential = GoogleAuthProvider.credential(idToken: googleAuth?.idToken, accessToken: googleAuth?.accessToken);
 
       UserCredential usercred = await _auth.signInWithCredential(credential);
-      return usercred.user;
+      isloggedIn(usercred.user);
     } catch (e) {
       debugPrint(e.toString());
     }
-    return null;
   }
 
-  Future<User?> loginFirebase(String email, String password) async {
+  Future<void> loginFirebase(String email, String password) async {
     try {
       UserCredential credential = await _auth.signInWithEmailAndPassword(email: email, password: password);
-      return credential.user;
+      isloggedIn(credential.user);
 
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
@@ -184,7 +191,6 @@ class _LoginFormState extends State<LoginForm> {
           break;
       }
     }
-    return null;
   }
 
   @override
@@ -210,8 +216,7 @@ class _LoginFormState extends State<LoginForm> {
                     isLoadingSignIn = true;
                   });
                   if(_loginFormKey.currentState!.validate()) {
-                    user = await loginFirebase(_emailController.text, _passwordController.text);
-                    isloggedIn(user);
+                    await loginFirebase(_email, _password);
                   }
                   setState(() {
                     isLoadingSignIn = false;
@@ -228,8 +233,7 @@ class _LoginFormState extends State<LoginForm> {
                 setState(() {
                   isLoadingGoogleSignIn = true;
                 });
-                user = await loginWithGoogle();
-                isloggedIn(user);
+                await loginWithGoogle();
                 setState(() {
                   isLoadingGoogleSignIn = false;
                 });

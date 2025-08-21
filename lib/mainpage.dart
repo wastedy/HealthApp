@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -10,17 +9,16 @@ class MainPage extends StatefulWidget {
   State<MainPage> createState() => _MainPageState();
 }
 
-class _MainPageState extends State<MainPage> {
+class _MainPageState extends State<MainPage> with TickerProviderStateMixin<MainPage> {
   final mainpagebackgroundcolor = Colors.black;
   final selectedItemColor = Colors.white;
   final iconTheme = IconThemeData(color: Colors.white);
   final bottomnavigatorTextStyle = TextStyle(color: Colors.white);
-
   SvgPicture scheduleIcon = SvgPicture.asset("assets/calendar-days-regular-full.svg", width: 50, height: 50,);
   SvgPicture accountIcon = SvgPicture.asset("assets/user-regular-full.svg", width: 50, height: 50,);
   SvgPicture homeIcon = SvgPicture.asset("assets/house-solid-full.svg", width: 50, height: 50,);
   int _selectedIndex = 0;
-  static const List<Widget> _navBarWidgets = <Widget>[HomePage(),  SchedulePage(), AccountPage()];
+  static final List<Widget> _navBarWidgets = <Widget>[const HomePage(), const SchedulePage(), const AccountPage()];
 
   @override
   void didChangeDependencies() {
@@ -83,8 +81,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final User? user = FirebaseAuth.instance.currentUser;
-  final _db = FirebaseFirestore.instance;
+  //final User? user = FirebaseAuth.instance.currentUser;
+  //final _db = FirebaseFirestore.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -94,7 +92,7 @@ class _HomePageState extends State<HomePage> {
         Padding(padding: EdgeInsetsGeometry.only(top: 20, left: 20, right: 20), 
         child: Row(
           children: [
-            FittedBox(child: Text("Seja Bem-Vindo(a)", style: TextStyle(color: Colors.white, fontSize: 40))),
+            FittedBox(child: Text("Seja Bem-Vindo(a),\n", style: TextStyle(color: Colors.white, fontSize: 40))),
           ],
           ),
         ),
