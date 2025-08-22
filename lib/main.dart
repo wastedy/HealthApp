@@ -15,12 +15,14 @@ Future<void> main() async {
   );
   
   Map<String, dynamic>? data;
-  final userDoc = FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid);
-  await userDoc.get().then((DocumentSnapshot doc) {
-    data = doc.data() as Map<String, dynamic>;
-    //debugPrint(data.toString());
-  }, onError: (e) => debugPrint("[FireStore] Error retrieving data $e")
-  );
+  final db = FirebaseFirestore.instance;
+  if (FirebaseAuth.instance.currentUser != null) {
+    final userDoc = db.collection('users').doc(FirebaseAuth.instance.currentUser!.uid);
+    await userDoc.get().then((DocumentSnapshot doc) {
+      data = doc.data() as Map<String, dynamic>;
+    }, onError: (e) => debugPrint("[main db call] Error retrieving data $e"));
+  }
+
   FirebaseAuth.instance.authStateChanges().listen((User? user) async {
     if (user == null) {
       debugPrint("[Firebase Auth] User is signed out");
@@ -31,9 +33,7 @@ Future<void> main() async {
     }
   });
 
-  
-
-  runApp(HealthApp(userData: data,));
+  runApp(HealthApp(userData: data));
 }
 
 class HealthApp extends StatelessWidget {
@@ -41,17 +41,12 @@ class HealthApp extends StatelessWidget {
   final User? user;
   final Map<String, dynamic>? userData;
 
-  Future<Map<String, dynamic>?>? fetchUserData(User user) async {
-    
-    return null;
-  }
-
   Widget signedInOrSignedOut() {
     String inicio = '/login';
     User? user = FirebaseAuth.instance.currentUser;
     
     if (user != null) {
-      debugPrint("[FetchUserData] ${userData.toString()}");
+      debugPrint("[signedInOrSignedOut method] ${userData.toString()}");
       inicio = '/home';
       return MaterialApp(
         title: "HealthApp",
@@ -93,6 +88,21 @@ class _LoginPageState extends State<LoginPage> {
   final _loginFormKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final ThemeData lightTheme = ThemeData(
+    brightness: Brightness.light,
+    colorScheme: ColorScheme.light(
+      surface: Colors.white,
+      primary: Colors.purple,
+    )
+  );
+  final ThemeData darkTheme = ThemeData(
+    brightness: Brightness.dark,
+    colorScheme: ColorScheme.dark(
+      surface: Colors.grey.shade900,
+      primary: Colors.blue,
+    )
+  );
+  bool isDarkMode = false;
   String _email = "";
   String _password = "";
   User? user;
@@ -121,7 +131,7 @@ class _LoginPageState extends State<LoginPage> {
         return "Insira uma senha com pelo menos 5 dígitos";
       }
       _email = _emailController.text;
-    _password = _passwordController.text;
+      _password = _passwordController.text;
     }
     
     return null;
@@ -157,9 +167,18 @@ class _LoginPageState extends State<LoginPage> {
 
 
   Future<void> isloggedIn(User? user) async {
-    if (user != null && context.mounted) {
+    if (user != null) {
       notifyAuthError('Logado com sucesso!', colortext: Colors.white, colorbar: Colors.green);
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainPage(user: user)));
+      final db = FirebaseFirestore.instance;
+      final userDoc = db.collection('users').doc(FirebaseAuth.instance.currentUser!.uid);
+      Map<String, dynamic>? data;
+      await userDoc.get().then((DocumentSnapshot doc) {
+        data = doc.data() as Map<String, dynamic>;
+      }, onError: (e) => debugPrint("[isloggedIn method loginpage] Error retrieving data $e"));
+      
+      // ignore: use_build_context_synchronously
+      context.mounted ? Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => MainPage(user: user, userData: data,))) : debugPrint("[isloggedIn method context not mounted error]");
+      
     }
   }
 
@@ -203,14 +222,25 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  void toggleDarkMode() {
+    setState(() {
+      isDarkMode = !isDarkMode;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Theme(data: isDarkMode ? darkTheme : lightTheme, child: Scaffold(
       body: Center(
         child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(vertical: 40),
+          //padding: EdgeInsets.symmetric(vertical: 0),
           child: Column(
             children: [
+              Row(mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  IconButton(iconSize: 48, onPressed: toggleDarkMode, icon: isDarkMode ? Icon(Icons.light_mode) : Icon(Icons.dark_mode)),
+                ],
+              ),
               avatarLogoImage(radius: 80),
               Text("HealthApp", textAlign: TextAlign.center, textScaler: TextScaler.linear(5)),
               Form(key: _loginFormKey, child: 
@@ -241,7 +271,7 @@ class _LoginPageState extends State<LoginPage> {
                             });
                           }, 
                           style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.green)), 
-                          child: Text("Entrar"))),
+                          child: Text("Entrar", style: TextStyle(color: isDarkMode ? Colors.white : Colors.black)))),
                     ),
                     isLoadingGoogleSignIn ? const CircularProgressIndicator.adaptive(padding: EdgeInsets.all(6),) : SizedBox(
                       width: 350, 
@@ -257,7 +287,7 @@ class _LoginPageState extends State<LoginPage> {
                           });
                         }, 
                         style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Color.fromARGB(217, 121, 119, 119))), 
-                        label: Text("Entrar com o Google")
+                        label: Text("Entrar com o Google", style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),)
                       )
                     ),
 
@@ -279,6 +309,7 @@ class _LoginPageState extends State<LoginPage> {
           )
         )
       )
+    )
     );
   }
 }
@@ -288,8 +319,7 @@ Widget avatarLogoImage({required double? radius}) => CircleAvatar(
   backgroundColor: const Color(0xD9D9D9D9), 
   child: Text(
     "Logo", 
-    style: TextStyle(color: Colors.grey), 
-    textScaler: TextScaler.linear(2),
+    style: TextStyle(color: Colors.grey, fontSize: 40), 
   )
 );
 

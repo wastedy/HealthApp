@@ -83,12 +83,12 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     
-    return SingleChildScrollView(child: Column(
+    return Column(
       children: [
         Padding(padding: EdgeInsetsGeometry.only(top: 20, left: 20, right: 20), 
         child: Row(
           children: [
-            FittedBox(child: Text("Seja Bem-Vindo(a),\n${widget.userData?['Name']}", style: TextStyle(color: Colors.white, fontSize: 40))),
+            FittedBox(child: Text("Seja Bem-Vindo(a),\n${widget.userData?['Name']} ${widget.userData?['Surname']}", style: TextStyle(color: Colors.white, fontSize: 40))),
             
 
           ],
@@ -96,7 +96,7 @@ class _HomePageState extends State<HomePage> {
         ),
 
         Row(children: [
-          Expanded(child: Padding(padding: EdgeInsetsGeometry.only(top: 550, left: 20, right: 20), 
+          Expanded(child: Padding(padding: EdgeInsetsGeometry.only(top: 520, left: 20, right: 20), 
             child: Text("Primeira vez?\nSolicite o agendamento agora!", style: TextStyle(color: Colors.white, fontSize: 25)),
             )
           )
@@ -116,7 +116,6 @@ class _HomePageState extends State<HomePage> {
 
         
       ],
-    )
     );
   }
 }
