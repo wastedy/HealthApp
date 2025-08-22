@@ -1,15 +1,18 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class MainPage extends StatefulWidget {
-  const MainPage({super.key});
+  const MainPage({super.key, required this.user, this.userData});
+  final Map<String, dynamic>? userData;
+  final User user;
 
   @override
   State<MainPage> createState() => _MainPageState();
 }
 
-class _MainPageState extends State<MainPage> with TickerProviderStateMixin<MainPage> {
+class _MainPageState extends State<MainPage> /*with TickerProviderStateMixin<MainPage>*/ {
   final mainpagebackgroundcolor = Colors.black;
   final selectedItemColor = Colors.white;
   final iconTheme = IconThemeData(color: Colors.white);
@@ -18,13 +21,8 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin<MainP
   SvgPicture accountIcon = SvgPicture.asset("assets/user-regular-full.svg", width: 50, height: 50,);
   SvgPicture homeIcon = SvgPicture.asset("assets/house-solid-full.svg", width: 50, height: 50,);
   int _selectedIndex = 0;
-  static final List<Widget> _navBarWidgets = <Widget>[const HomePage(), const SchedulePage(), const AccountPage()];
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-  }
-
+  List<Widget> get _navBarWidgets => <Widget>[HomePage(user: widget.user, userData: widget.userData,), SchedulePage(user: widget.user), AccountPage(user: widget.user)];
+  
   void _onTapBottomNavbar(int index) {
     setState(() {
       _selectedIndex = index;
@@ -74,16 +72,14 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin<MainP
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
-
+  const HomePage({super.key, required this.user, required this.userData});
+  final Map<String, dynamic>? userData;
+  final User user;
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  //final User? user = FirebaseAuth.instance.currentUser;
-  //final _db = FirebaseFirestore.instance;
-
   @override
   Widget build(BuildContext context) {
     
@@ -92,7 +88,9 @@ class _HomePageState extends State<HomePage> {
         Padding(padding: EdgeInsetsGeometry.only(top: 20, left: 20, right: 20), 
         child: Row(
           children: [
-            FittedBox(child: Text("Seja Bem-Vindo(a),\n", style: TextStyle(color: Colors.white, fontSize: 40))),
+            FittedBox(child: Text("Seja Bem-Vindo(a),\n${widget.userData?['Name']}", style: TextStyle(color: Colors.white, fontSize: 40))),
+            
+
           ],
           ),
         ),
@@ -124,7 +122,8 @@ class _HomePageState extends State<HomePage> {
 }
 
 class SchedulePage extends StatelessWidget {
-  const SchedulePage({super.key});
+  const SchedulePage({super.key, required this.user});
+  final User user;
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +132,8 @@ class SchedulePage extends StatelessWidget {
 }
 
 class AccountPage extends StatefulWidget {
-  const AccountPage({super.key});
+  const AccountPage({super.key, required this.user});
+  final User user;
 
   @override
   State<AccountPage> createState() => _AccountPageState();
