@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'registerpage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'forgotpasswordpage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'mainpage.dart';
 import 'config/firebase_options.dart';
 
@@ -13,27 +14,25 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  
-  Map<String, dynamic>? data;
-  final db = FirebaseFirestore.instance;
-  if (FirebaseAuth.instance.currentUser != null) {
-    final userDoc = db.collection('users').doc(FirebaseAuth.instance.currentUser!.uid);
-    await userDoc.get().then((DocumentSnapshot doc) {
-      data = doc.data() as Map<String, dynamic>;
-    }, onError: (e) => debugPrint("[main db call] Error retrieving data $e"));
-  }
 
   FirebaseAuth.instance.authStateChanges().listen((User? user) async {
     if (user == null) {
       debugPrint("[Firebase Auth] User is signed out");
+      runApp(HealthApp());
     }
     else {
       debugPrint("[Firebase Auth] User is signed in");
-      
+      Map<String, dynamic>? data;
+      final db = FirebaseFirestore.instance;
+      if (FirebaseAuth.instance.currentUser != null) {
+        final userDoc = db.collection('users').doc(FirebaseAuth.instance.currentUser!.uid);
+        await userDoc.get().then((DocumentSnapshot doc) {
+          data = doc.data() as Map<String, dynamic>;
+        }, onError: (e) => debugPrint("[main db call] Error retrieving data $e"));
+      }
+      runApp(HealthApp(userData: data));
     }
   });
-
-  runApp(HealthApp(userData: data));
 }
 
 class HealthApp extends StatelessWidget {
@@ -44,29 +43,27 @@ class HealthApp extends StatelessWidget {
   Widget signedInOrSignedOut() {
     String inicio = '/login';
     User? user = FirebaseAuth.instance.currentUser;
-    
+
+    Map<String, WidgetBuilder> rotas = {
+      '/login' : (context) => const LoginPage(),
+      '/register' : (context) => const RegisterPage(),
+      '/forgotpassword' : (context) => const ForgotPasswordPage(),
+    };
+  
     if (user != null) {
+      rotas['/home'] = (context) => MainPage(userData: userData);
       debugPrint("[signedInOrSignedOut method] ${userData.toString()}");
       inicio = '/home';
       return MaterialApp(
         title: "HealthApp",
         initialRoute: inicio,
-        routes: {
-          '/login': (context) => const LoginPage(),
-          '/register': (context) => const RegisterPage(),
-          '/forgotpassword': (context) => const ForgotPasswordPage(),
-          '/home': (context) => MainPage(user: user, userData: userData),
-        },
+        routes: rotas,
       );
     }
     return MaterialApp(
       title: "HealthApp",
       initialRoute: inicio,
-      routes: {
-        '/login': (context) => const LoginPage(),
-        '/register': (context) => const RegisterPage(),
-        '/forgotpassword': (context) => const ForgotPasswordPage(),
-      },
+      routes: rotas,
     );
   }
 
@@ -78,7 +75,6 @@ class HealthApp extends StatelessWidget {
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
-
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
@@ -110,6 +106,8 @@ class _LoginPageState extends State<LoginPage> {
   bool isLoadingGoogleSignIn = false;
   bool isLoadingSignIn = false;
   List<TextEditingController?> controllers = [];
+
+
 
   //TODO: Dispose not working properly and giving me headaches
   /*@override
@@ -177,14 +175,14 @@ class _LoginPageState extends State<LoginPage> {
       }, onError: (e) => debugPrint("[isloggedIn method loginpage] Error retrieving data $e"));
       
       // ignore: use_build_context_synchronously
-      context.mounted ? Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => MainPage(user: user, userData: data,))) : debugPrint("[isloggedIn method context not mounted error]");
+      context.mounted ? Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => MainPage(userData: data,))) : debugPrint("[isloggedIn method context not mounted error]");
       
     }
   }
 
   void notifyAuthError(String error, {required Color colortext, required Color colorbar}) {
     ScaffoldMessenger.of(context).removeCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(duration: Duration(seconds: 2), behavior: SnackBarBehavior.floating, showCloseIcon: true, content: Text(error, style: TextStyle(color: colortext), textScaler: TextScaler.linear(1.2),), backgroundColor: colorbar,));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(duration: Duration(seconds: 2), behavior: SnackBarBehavior.floating, showCloseIcon: true, content: Text(error, style: TextStyle(color: colortext), textScaler: TextScaler.linear(1.2),), backgroundColor: colorbar));
   }
 
   Future<void> loginWithGoogle() async {
@@ -222,14 +220,29 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> saveDarkMode(bool isDarkMode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isDarkMode', isDarkMode);
+  }
+
+  Future<void> loadDarkMode() async {
+    bool? isDarkModeprefs;
+    final prefs = await SharedPreferences.getInstance();
+    isDarkModeprefs = prefs.getBool('isDarkMode');
+    isDarkMode == isDarkModeprefs ? null : toggleDarkMode();
+
+  }
+
   void toggleDarkMode() {
     setState(() {
       isDarkMode = !isDarkMode;
     });
+    saveDarkMode(isDarkMode);
   }
 
   @override
   Widget build(BuildContext context) {
+    loadDarkMode();
     return Theme(data: isDarkMode ? darkTheme : lightTheme, child: Scaffold(
       body: Center(
         child: SingleChildScrollView(
