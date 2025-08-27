@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:healthapp/models/form_fields_model.dart';
+import 'package:healthapp/models/form_fields_items.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key, this.userData});
@@ -150,23 +150,60 @@ class FormPage extends StatefulWidget {
 }
 
 class _FormPageState extends State<FormPage> {
+  final _formKey = GlobalKey<FormState>();
   Color appbarColor = Colors.black;
   Color backgroundColor = Color.fromRGBO(172, 180, 180, 100);
   Color appbarForegroundColor = Colors.white;
+  late final List<TextEditingController> _controllers = List.generate(formFieldsItems.length, (i) => TextEditingController());
+
+  List<Widget> formBuilder({required String label, required controller}) {
+    return [Text(label), TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          filled: true,
+          border: OutlineInputBorder(),
+        ),
+      )
+    ];
+    
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text("Formulário"), backgroundColor: appbarColor, foregroundColor: appbarForegroundColor,),
       backgroundColor: backgroundColor,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
+      body: Form(key: _formKey, 
+        child:
+          Padding(padding: EdgeInsetsGeometry.all(10),
+            child: ListView(children: [
               
-            ]
-          ,
-        ),
-      )
-    );
+              ListView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: formFieldsItems.length,
+                itemBuilder: ((context, index) {
+                  final widgetinfo = formFieldsItems[index];
+                  final widget = formBuilder(label: widgetinfo['label'], controller: _controllers[index]);
+                  return Padding(padding: EdgeInsetsGeometry.only(bottom: 10),
+                    child:
+                      Column(spacing: 10, crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          widget[0], 
+                          widget[1]
+                        ],
+                      ),
+                  );
+                })
+              ),
+
+              TextButton(style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.green)),onPressed: null, child: Text("Enviar", style: TextStyle(color: Colors.black, fontSize: 20),)),
+
+            ])
+          ),
+          ),
+
+
+      );
   }
 }
