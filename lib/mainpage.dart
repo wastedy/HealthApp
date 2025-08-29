@@ -166,7 +166,7 @@ class _FormPageState extends State<FormPage> {
     super.dispose();
   }
 
-  Future<void> sendFormAnswers() async {
+  Future<bool> sendFormAnswers() async {
     final db = FirebaseFirestore.instance;
     final uid = FirebaseAuth.instance.currentUser!.uid;
     Map<String, dynamic> data = {};
@@ -178,10 +178,15 @@ class _FormPageState extends State<FormPage> {
       final questionValue = <String, dynamic>{question: value};
       data.addAll(questionValue);
     }
-    DocumentReference formanswersdoc = db.collection('users').doc(uid).collection('form_answers').doc();
-    await formanswersdoc.set(data, SetOptions(merge: true));
-    if(mounted) notifyMessenger(context: context, msg: 'Formulário enviado com sucesso!', colortext: Colors.white, colorbar: Colors.green);
-    await Future.delayed(Duration(seconds: 1));
+    try {
+      DocumentReference formanswersdoc = db.collection('users').doc(uid).collection('form_answers').doc();
+      await formanswersdoc.set(data, SetOptions(merge: true));
+      if(mounted) notifyMessenger(context: context, msg: 'Formulário enviado com sucesso!', colortext: Colors.white, colorbar: Colors.green);
+      return true;
+    } on Exception catch (e) {
+      debugPrint(e.toString());
+    }
+    return false;
   }
 
   List<Widget> formBuilder({required String label, required controller, required inputType, required isRequired}) {
@@ -240,9 +245,12 @@ class _FormPageState extends State<FormPage> {
                     isLoading = true;
                   });
                   if (_formKey.currentState!.validate()) {
-                    await sendFormAnswers();
-                    if (context.mounted) {
-                      Navigator.of(context).pop();
+                    if(await sendFormAnswers()) {
+                      await Future.delayed(Duration(seconds: 1));
+                      if (context.mounted) Navigator.of(context).pop();
+                    }
+                    else {
+                      if(context.mounted) notifyMessenger(context: context, msg: "Houve algum erro no envio do formulário", colortext: Colors.white, colorbar: Colors.red);
                     }
                   }
                   setState(() {
