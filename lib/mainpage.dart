@@ -156,7 +156,9 @@ class _FormPageState extends State<FormPage> {
   Color appbarForegroundColor = Colors.white;
   late final formType = widget.userData!['Account_Type'];
   bool isLoading = false;
-  late final List<TextEditingController> _controllers = List.generate(formFieldsItems[formType]!.length, (i) => TextEditingController());
+  late final numberFields = formFieldsItems[formType]!.length;
+  bool isFormValid = false;
+  late final List<TextEditingController> _controllers = List.generate(numberFields, (i) => TextEditingController());
 
   @override
   void dispose() {
@@ -189,10 +191,24 @@ class _FormPageState extends State<FormPage> {
     return false;
   }
 
+  void isFormComplete() {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        isFormValid = true;
+      });
+    }
+    else {
+      setState(() {
+        isFormValid = false;
+      });
+    }
+  }
+
   List<Widget> formBuilder({required String label, required controller, required inputType, required isRequired}) {
     return [Text(label), TextFormField(
         controller: controller,
         validator: (value) => formValidator(value: value, inputType: inputType, isRequired: isRequired),
+        onEditingComplete: () => { isFormComplete() },
         decoration: InputDecoration(
           filled: true,
           border: OutlineInputBorder(),
@@ -223,7 +239,7 @@ class _FormPageState extends State<FormPage> {
               ListView.builder(
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
-                itemCount: formFieldsItems[formType]!.length,
+                itemCount: numberFields,
                 itemBuilder: ((context, index) {
                   final widgetinfo = formFieldsItems[formType]![index];
                   final widget = formBuilder(label: widgetinfo['label'], controller: _controllers[index], inputType: widgetinfo['inputType'], isRequired: widgetinfo['required']);
@@ -239,7 +255,7 @@ class _FormPageState extends State<FormPage> {
                 })
               ),
 
-              isLoading ? const CircularProgressIndicator.adaptive() : TextButton(style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.green)), 
+              TextButton(style: ButtonStyle(backgroundColor: isFormValid ? WidgetStatePropertyAll(Colors.green) : WidgetStatePropertyAll(Colors.grey)), 
                 onPressed: () async {
                   setState(() {
                     isLoading = true;
@@ -257,7 +273,7 @@ class _FormPageState extends State<FormPage> {
                     isLoading = false;
                   });
                 }, 
-                child: Text("Enviar", style: TextStyle(color: Colors.black, fontSize: 20),)),
+                child: isLoading ? const CircularProgressIndicator.adaptive() : Text("Enviar", style: TextStyle(color: Colors.black, fontSize: 20),)),
 
             ])
           ),
