@@ -16,25 +16,17 @@ Future<void> main() async {
   );
 
   FirebaseAuth.instance.authStateChanges().listen((User? user) async {
+    Map<String, dynamic>? data;
     if (user == null) {
       debugPrint("[Firebase Auth] User is signed out");
-      runApp(HealthApp());
     }
     else {
       debugPrint("[Firebase Auth] User is signed in");
-      Map<String, dynamic>? data;
-      final db = FirebaseFirestore.instance;
       if (FirebaseAuth.instance.currentUser != null) {
-        final userDoc = db.collection('users').doc(FirebaseAuth.instance.currentUser!.uid);
-        await userDoc.get().then((DocumentSnapshot doc) {
-          if(doc.data() != null) {
-            data = doc.data() as Map<String, dynamic>;
-          }
-          
-        }, onError: (e) => debugPrint("[main db call] Error retrieving data $e"));
-      }
-      runApp(HealthApp(userData: data));
+        data = await getUserData(user);
+      }    
     }
+    runApp(HealthApp(userData: data));
   });
 }
 
@@ -85,8 +77,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _auth = FirebaseAuth.instance;
   final _loginFormKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final List<TextEditingController> _controllers = List.generate(2, (i) => TextEditingController());
   final ThemeData lightTheme = ThemeData(
     brightness: Brightness.light,
     colorScheme: ColorScheme.light(
@@ -102,25 +93,19 @@ class _LoginPageState extends State<LoginPage> {
     )
   );
   bool isDarkMode = false;
-  String _email = "";
-  String _password = "";
   User? user;
   bool isPasswordVisible = true;
   bool isLoadingGoogleSignIn = false;
   bool isLoadingSignIn = false;
-  List<TextEditingController?> controllers = [];
 
-
-
-  //TODO: Dispose not working properly and giving me headaches
-  /*@override
+  //TODO: Retrieve google user data for database
+  @override
   void dispose() {
-    for (var controller in controllers) {
-      controller?.dispose();
+    for (var controller in _controllers) {
+      controller.dispose();
     }
     super.dispose();
-    
-  }*/
+  }
 
   String? loginFormValidator({required String? value, required String? inputType}) {
     if (value == null || value.isEmpty) { return "Esse campo não pode estar vazio"; }
@@ -131,8 +116,6 @@ class _LoginPageState extends State<LoginPage> {
       if (value.length < 5) {
         return "Insira uma senha com pelo menos 5 dígitos";
       }
-      _email = _emailController.text;
-      _password = _passwordController.text;
     }
     
     return null;
@@ -151,7 +134,6 @@ class _LoginPageState extends State<LoginPage> {
       icon = isPasswordVisible ?  Icon(Icons.visibility_off) : Icon(Icons.visibility);
       onPressed = togglePasswordVisibility;
     }
-    controllers.add(controller);
     return TextFormField(
       controller: controller,
       validator: (value) => loginFormValidator(value: value, inputType: validator),
@@ -166,26 +148,14 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-
   Future<void> isloggedIn(User? user) async {
     if (user != null) {
-      notifyAuthError('Logado com sucesso!', colortext: Colors.white, colorbar: Colors.green);
-      final db = FirebaseFirestore.instance;
-      final userDoc = db.collection('users').doc(FirebaseAuth.instance.currentUser!.uid);
-      Map<String, dynamic>? data;
-      await userDoc.get().then((DocumentSnapshot doc) {
-        data = doc.data() as Map<String, dynamic>;
-      }, onError: (e) => debugPrint("[isloggedIn method loginpage] Error retrieving data $e"));
+      notifyMessenger(context: context, msg: 'Logado com sucesso!', colortext: Colors.white, colorbar: Colors.green);
       
-      // ignore: use_build_context_synchronously
-      context.mounted ? Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => MainPage(userData: data,))) : debugPrint("[isloggedIn method context not mounted error]");
-      
-    }
-  }
+      final userData = await getUserData(user);
 
-  void notifyAuthError(String error, {required Color colortext, required Color colorbar}) {
-    ScaffoldMessenger.of(context).removeCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(duration: Duration(seconds: 2), behavior: SnackBarBehavior.floating, showCloseIcon: true, content: Text(error, style: TextStyle(color: colortext), textScaler: TextScaler.linear(1.2),), backgroundColor: colorbar));
+      if (mounted) Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => MainPage(userData: userData)));
+    }
   }
 
   Future<void> loginWithGoogle() async {
@@ -202,20 +172,22 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  Future<void> loginFirebase(String email, String password) async {
+  Future<void> loginFirebase() async {
     try {
+      String email = _controllers[0].text;
+      String password = _controllers[1].text;
       UserCredential credential = await _auth.signInWithEmailAndPassword(email: email, password: password);
       isloggedIn(credential.user);
 
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
         case 'invalid-email':
-          notifyAuthError('Email Inválido.', colorbar: Colors.red, colortext: Colors.white);
+          if(mounted) notifyMessenger(context: context, msg: 'Email Inválido.', colorbar: Colors.red, colortext: Colors.white);
           break;
         case 'invalid-credential':
-          notifyAuthError('Usuário e/ou senha inválidos', colorbar: Colors.blueGrey, colortext: Colors.white);
+          if(mounted) notifyMessenger(context: context, msg: 'Usuário e/ou senha inválidos', colorbar: Colors.blueGrey, colortext: Colors.white);
         case 'too-many-requests':
-          notifyAuthError("Muitas tentativas, tente novamente mais tarde", colortext: Colors.white, colorbar: Colors.blue);
+          if(mounted) notifyMessenger(context: context, msg: "Muitas tentativas, tente novamente mais tarde", colortext: Colors.white, colorbar: Colors.blue);
         default:
           debugPrint(e.toString());
           break;
@@ -264,11 +236,11 @@ class _LoginPageState extends State<LoginPage> {
                   children: <Widget>[
                     Padding(
                       padding: EdgeInsets.symmetric(vertical: 20, horizontal: 30), 
-                      child: loginPageInputTextFormField(validator: "mail", obscureText: false, controller: _emailController, labelText: "Endereço de email", prefixIcon: Icon(Icons.mail_outline), hintText: "exemplo@exemplo.com")
+                      child: loginPageInputTextFormField(validator: "mail", obscureText: false, controller: _controllers[0], labelText: "Endereço de email", prefixIcon: Icon(Icons.mail_outline), hintText: "exemplo@exemplo.com")
                     ),
                     Padding(
                       padding: EdgeInsets.symmetric(vertical: 10, horizontal: 30), 
-                      child: loginPageInputTextFormField(validator: "password", obscureText: isPasswordVisible, controller: _passwordController, labelText: "Senha", prefixIcon: Icon(Icons.lock_outline))
+                      child: loginPageInputTextFormField(validator: "password", obscureText: isPasswordVisible, controller: _controllers[1], labelText: "Senha", prefixIcon: Icon(Icons.lock_outline))
                     ),
                     Padding(
                       padding: EdgeInsetsGeometry.symmetric(vertical: 20),
@@ -280,7 +252,7 @@ class _LoginPageState extends State<LoginPage> {
                               isLoadingSignIn = true;
                             });
                             if(_loginFormKey.currentState!.validate()) {
-                              await loginFirebase(_email, _password);
+                              await loginFirebase();
                             }
                             setState(() {
                               isLoadingSignIn = false;
@@ -339,4 +311,17 @@ Widget avatarLogoImage({required double? radius}) => CircleAvatar(
   )
 );
 
+void notifyMessenger({required BuildContext context, required msg, required colortext, required colorbar}){
+  ScaffoldMessenger.of(context).removeCurrentSnackBar();
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(duration: Duration(seconds: 2), behavior: SnackBarBehavior.floating, showCloseIcon: true, content: Text(msg, style: TextStyle(color: colortext), textScaler: TextScaler.linear(1.2),), backgroundColor: colorbar));
+}
 
+Future<Map<String, dynamic>?> getUserData(User user) async {
+  final db = FirebaseFirestore.instance;
+  final userDoc = db.collection('users').doc(FirebaseAuth.instance.currentUser!.uid);
+  Map<String, dynamic>? data;
+  await userDoc.get().then((DocumentSnapshot doc) {
+    data = doc.data() as Map<String, dynamic>;
+  }, onError: (e) => debugPrint("[getUserData method main] Error retrieving data $e"));
+  return data;
+}

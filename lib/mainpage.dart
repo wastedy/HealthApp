@@ -1,6 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:healthapp/main.dart';
 import 'package:healthapp/models/form_questions.dart';
 
 class MainPage extends StatefulWidget {
@@ -69,7 +71,7 @@ class _HomePageState extends State<HomePage> {
     if (widget.userData!['isformAnswered'] == false) {
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(duration: Duration(seconds: 2), behavior: SnackBarBehavior.floating, showCloseIcon: true, content: Text("Primeiro preencha o formulário!", style: TextStyle(color: Colors.black), textScaler: TextScaler.linear(1.2),), backgroundColor: Colors.yellow));
-      Navigator.of(context).push(MaterialPageRoute(builder: (context) => FormPage()));
+      Navigator.of(context).push(MaterialPageRoute(builder: (context) => FormPage(userData: widget.userData)));
     }
     //Solicitar agendamento
   }
@@ -77,7 +79,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Padding(padding: EdgeInsetsGeometry.only(top: 40, bottom: 20, left: 20, right: 20),
-      child: Column(
+      child: ListView(
         children: [
           Row(
             children: [
@@ -87,7 +89,7 @@ class _HomePageState extends State<HomePage> {
             ),
           
 
-          Padding(padding: EdgeInsetsGeometry.only(top: screenHeight * 0.50),
+          Padding(padding: EdgeInsetsGeometry.only(top: screenHeight * 0.25),
             child: Row(children: [
               Expanded(child: Text("Primeira vez?\nSolicite o agendamento agora!", style: TextStyle(color: Colors.white, fontSize: 25)),
                 )
@@ -141,8 +143,8 @@ class _AccountPageState extends State<AccountPage> {
 }
 
 class FormPage extends StatefulWidget {
-  const FormPage({super.key});
-
+  const FormPage({super.key, required this.userData});
+  final Map<String, dynamic>? userData;
   @override
   State<FormPage> createState() => _FormPageState();
 }
@@ -152,11 +154,40 @@ class _FormPageState extends State<FormPage> {
   Color appbarColor = Colors.black;
   Color backgroundColor = Color.fromRGBO(172, 180, 180, 100);
   Color appbarForegroundColor = Colors.white;
-  late final List<TextEditingController> _controllers = List.generate(formFieldsItems.length, (i) => TextEditingController());
+  late final formType = widget.userData!['Account_Type'];
+  bool isLoading = false;
+  late final List<TextEditingController> _controllers = List.generate(formFieldsItems[formType]!.length, (i) => TextEditingController());
 
-  List<Widget> formBuilder({required String label, required controller}) {
+  @override
+  void dispose() {
+    for (var controller in _controllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> sendFormAnswers() async {
+    final db = FirebaseFirestore.instance;
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    Map<String, dynamic> data = {};
+    for (var index = 0; index < _controllers.length; index++) {
+      String question = formFieldsItems[formType]![index]['label'];
+      debugPrint(question);
+      final value = _controllers[index].text;
+      debugPrint(value);
+      final questionValue = <String, dynamic>{question: value};
+      data.addAll(questionValue);
+    }
+    DocumentReference formanswersdoc = db.collection('users').doc(uid).collection('form_answers').doc();
+    await formanswersdoc.set(data, SetOptions(merge: true));
+    if(mounted) notifyMessenger(context: context, msg: 'Formulário enviado com sucesso!', colortext: Colors.white, colorbar: Colors.green);
+    await Future.delayed(Duration(seconds: 1));
+  }
+
+  List<Widget> formBuilder({required String label, required controller, required inputType, required isRequired}) {
     return [Text(label), TextFormField(
         controller: controller,
+        validator: (value) => formValidator(value: value, inputType: inputType, isRequired: isRequired),
         decoration: InputDecoration(
           filled: true,
           border: OutlineInputBorder(),
@@ -166,10 +197,18 @@ class _FormPageState extends State<FormPage> {
     
   }
 
+  String? formValidator({required String? value, required String? inputType, required String isRequired}) {
+    if (inputType == 'TextField' && (isRequired == 'true' && value!.isEmpty)) {
+      return "Esse campo não pode estar vazio";
+    }
+
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Formulário"), backgroundColor: appbarColor, foregroundColor: appbarForegroundColor,),
+      appBar: AppBar(title: Text("Formulário ${widget.userData!['Account_Type']}"), backgroundColor: appbarColor, foregroundColor: appbarForegroundColor,),
       backgroundColor: backgroundColor,
       body: Form(key: _formKey, 
         child:
@@ -179,10 +218,10 @@ class _FormPageState extends State<FormPage> {
               ListView.builder(
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
-                itemCount: formFieldsItems.length,
+                itemCount: formFieldsItems[formType]!.length,
                 itemBuilder: ((context, index) {
-                  final widgetinfo = formFieldsItems[index];
-                  final widget = formBuilder(label: widgetinfo['label'], controller: _controllers[index]);
+                  final widgetinfo = formFieldsItems[formType]![index];
+                  final widget = formBuilder(label: widgetinfo['label'], controller: _controllers[index], inputType: widgetinfo['inputType'], isRequired: widgetinfo['required']);
                   return Padding(padding: EdgeInsetsGeometry.only(bottom: 10),
                     child:
                       Column(spacing: 10, crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,7 +234,22 @@ class _FormPageState extends State<FormPage> {
                 })
               ),
 
-              TextButton(style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.green)),onPressed: null, child: Text("Enviar", style: TextStyle(color: Colors.black, fontSize: 20),)),
+              isLoading ? const CircularProgressIndicator.adaptive() : TextButton(style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.green)), 
+                onPressed: () async {
+                  setState(() {
+                    isLoading = true;
+                  });
+                  if (_formKey.currentState!.validate()) {
+                    await sendFormAnswers();
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                    }
+                  }
+                  setState(() {
+                    isLoading = false;
+                  });
+                }, 
+                child: Text("Enviar", style: TextStyle(color: Colors.black, fontSize: 20),)),
 
             ])
           ),

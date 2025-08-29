@@ -16,21 +16,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final registerformbackgroundcolor = const Color.fromARGB(255, 199, 199, 199);
   final registerpagebackgroundcolor = Colors.white;
   final _registerFormKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _surnameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmpasswordController = TextEditingController();
-  final _birthdayController = TextEditingController();
-  final _cpfController = TextEditingController();
-  String _name = '';
-  String _surname = '';
-  String _email = '';
-  String _birthday = '';
-  String _phone = '';
-  String _cpf = '';
-  String _password = '';
+  final _controllers = List.generate(8, (index) => TextEditingController());
   final filledTextColor = const Color.fromARGB(255, 146, 142, 142);
   final today = DateTime.now();
   final _auth = FirebaseAuth.instance;
@@ -39,16 +25,14 @@ class _RegisterPageState extends State<RegisterPage> {
   User? user;
   bool isPasswordVisible = true;
   ClientOrWorker? _accountType = ClientOrWorker.client;
-  List<TextEditingController?> controllers = [];
-  
-  //TODO: Dispose is giving too much headache
-  //@override
-  //void dispose() {
-    //for (var controller in controllers) {
-      //controller?.dispose();
-    //}
-    //super.dispose();
-  //}
+
+  @override
+  void dispose() {
+    for (var controller in _controllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
 
   String? registerFormValidator({required String? value, required String? validator}) {
     if (value == null || value.isEmpty) { return "Esse campo não pode estar vazio"; }
@@ -61,16 +45,9 @@ class _RegisterPageState extends State<RegisterPage> {
       }
     }
     if (validator == 'password2') {
-      if (value != _passwordController.text) {
+      if (value != _controllers[6].text) {
         return "Senhas não correspondem";
       }
-      _email = _emailController.text;
-      _password = _passwordController.text;
-      _name = _nameController.text;
-      _surname = _surnameController.text;
-      _birthday = _birthdayController.text;
-      _cpf = _cpfController.text;
-      _phone = _phoneController.text;
     }
     if (validator == 'cpf') {
       if (value.length != 11) {
@@ -94,7 +71,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   void hasUser(User? user) {
     if (user != null) {
-      notifyAuthError('Cadastrado com sucesso!', colortext: Colors.white, colorbar: Colors.green);
+      if(mounted) notifyMessenger(context: context, msg: 'Cadastrado com sucesso!', colortext: Colors.white, colorbar: Colors.green);
       Navigator.pushReplacementNamed(context, '/home');
     }
   }
@@ -103,7 +80,6 @@ class _RegisterPageState extends State<RegisterPage> {
     var icon = Icon(Icons.cancel_outlined);
     var onPressed = controller.clear;
     var readOnly = false;
-    controllers.add(controller);
     if (validator == "password") {
       icon = isPasswordVisible ? Icon(Icons.visibility_off) : Icon(Icons.visibility);
       onPressed = togglePasswordVisibility;
@@ -119,7 +95,7 @@ class _RegisterPageState extends State<RegisterPage> {
           var year = selectedDate.year;
           if (day.length < 2) { day = "0$day"; }
           if (month.length < 2) { month = "0$month"; }
-         _birthdayController.text = "$day/$month/$year";
+         _controllers[5].text = "$day/$month/$year";
         }
       };
     }
@@ -131,7 +107,6 @@ class _RegisterPageState extends State<RegisterPage> {
       obscureText: obscureText,
       onTap: onTap,
       maxLength: maxLength,
-      onSaved: (value) => onSaved = controller.text,
       keyboardType: keyboardType,
       readOnly: readOnly,
       decoration: InputDecoration(
@@ -168,42 +143,42 @@ class _RegisterPageState extends State<RegisterPage> {
                             children: [
                               Row(mainAxisSize: MainAxisSize.min, spacing: 5,
                                 children: [
-                                  Expanded(child: registerPageInputTextFormField(onSaved: _name, keyboardType: TextInputType.name, prefixIcon: Icon(Icons.person), controller: _nameController, obscureText: false, hintText: "Insira seu Nome", label: Text("Nome")),),
-                                  Expanded(child: registerPageInputTextFormField(onSaved: _surname, keyboardType: TextInputType.name, controller: _surnameController, obscureText: false, hintText: "Insira seu Sobrenome", label: Text("Sobrenome"))),
+                                  Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.name, prefixIcon: Icon(Icons.person), controller: _controllers[0], obscureText: false, hintText: "Insira seu Nome", label: Text("Nome")),),
+                                  Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.name, controller: _controllers[1], obscureText: false, hintText: "Insira seu Sobrenome", label: Text("Sobrenome"))),
                                 ],
                               ),
                               Padding(
                                 padding: EdgeInsetsGeometry.symmetric(vertical: 30), 
                                 child: Row(
                                   children: [
-                                    Expanded(child: registerPageInputTextFormField(onSaved: _email, keyboardType: TextInputType.emailAddress, prefixIcon: Icon(Icons.email), validator: 'mail', controller: _emailController, obscureText: false, hintText: "exemplo@exemplo.com", label: Text("Email")),)
+                                    Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.emailAddress, prefixIcon: Icon(Icons.email), validator: 'mail', controller: _controllers[2], obscureText: false, hintText: "exemplo@exemplo.com", label: Text("Email")),)
                                   ],
                                 ),
                               ),
                               Padding(padding: EdgeInsetsGeometry.only(bottom: 30), child: 
                                 Row(
                                   children: [
-                                    Expanded(child: registerPageInputTextFormField(onSaved: _cpf, keyboardType: TextInputType.number, maxLength: 11, prefixIcon: Icon(Icons.south_america_outlined), validator: 'cpf', controller: _cpfController, obscureText: false, hintText: "000.000.000-00", label: Text("CPF"))),
+                                    Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.number, maxLength: 11, prefixIcon: Icon(Icons.south_america_outlined), validator: 'cpf', controller: _controllers[3], obscureText: false, hintText: "000.000.000-00", label: Text("CPF"))),
                                   ],
                                 )
                               ),
                               Row(spacing: 3,
                                 children: [
-                                  SizedBox(width: 210, child: registerPageInputTextFormField(onSaved: _phone, keyboardType: TextInputType.phone, maxLength: 11, prefixIcon: Icon(Icons.phone_android_rounded), validator: 'phone', controller: _phoneController, obscureText: false, hintText: "(00) 0000-0000", label: Text("Celular"))),
-                                  Expanded(child: registerPageInputTextFormField(onSaved: _birthday, validator: 'birthday', controller: _birthdayController, obscureText: false, hintText: "dd/mm/aaaa", label: Text("Data de nasci\nmento")),)
+                                  SizedBox(width: 210, child: registerPageInputTextFormField(keyboardType: TextInputType.phone, maxLength: 11, prefixIcon: Icon(Icons.phone_android_rounded), validator: 'phone', controller: _controllers[4], obscureText: false, hintText: "(00) 0000-0000", label: Text("Celular"))),
+                                  Expanded(child: registerPageInputTextFormField(validator: 'birthday', controller: _controllers[5], obscureText: false, hintText: "dd/mm/aaaa", label: Text("Data de nasci\nmento")),)
                                 ],
                               ),
                               Padding(padding: EdgeInsetsGeometry.only(top: 30), child: 
                                 Row(
                                   children: [
-                                    Expanded(child: registerPageInputTextFormField(onSaved: _password, keyboardType: TextInputType.text, prefixIcon: Icon(Icons.lock), validator: 'password', controller: _passwordController, obscureText: isPasswordVisible, hintText: "******", label: Text("Senha"))),
+                                    Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.text, prefixIcon: Icon(Icons.lock), validator: 'password', controller: _controllers[6], obscureText: isPasswordVisible, hintText: "******", label: Text("Senha"))),
                                   ],
                                 )
                               ),
                               Padding(padding: EdgeInsetsGeometry.only(top: 30), child: 
                                 Row(
                                   children: [
-                                    Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.text, prefixIcon: Icon(Icons.lock), validator: 'password2', controller: _confirmpasswordController, obscureText: true, hintText: "******", label: Text("Confirmar Senha"))),
+                                    Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.text, prefixIcon: Icon(Icons.lock), validator: 'password2', controller: _controllers[7], obscureText: true, hintText: "******", label: Text("Confirmar Senha"))),
                                   ],
                                 ),
                               ),
@@ -247,8 +222,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                         isloading = true;
                                       });
                                       if(_registerFormKey.currentState!.validate()) {
-                                        _registerFormKey.currentState!.save();
-                                        registerFirebase(_email, _password, _name, _surname, _cpf, _phone, _birthday, _accountType, false);
+                                        registerFirebase(_accountType, false);
                                       }
                                       setState(() {
                                         isloading = false;
@@ -276,14 +250,16 @@ class _RegisterPageState extends State<RegisterPage> {
       )
     );
   }
-
-  void notifyAuthError(String error, {required Color colortext, required Color colorbar}) {
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(behavior: SnackBarBehavior.floating, showCloseIcon: true, content: Text(error, style: TextStyle(color: colortext), textScaler: TextScaler.linear(1.2),), backgroundColor: colorbar,));
-  }
   
-  Future<void> registerFirebase(String email, String password, String name, String surname, String cpf, String phone, String birthday, ClientOrWorker? accountType, bool isformAnswered) async {
+  Future<void> registerFirebase(ClientOrWorker? accountType, bool isformAnswered) async {
     try {
+      String email = _controllers[2].text;
+      String password = _controllers[7].text;
+      String name = _controllers[0].text;
+      String surname = _controllers[1].text;
+      String cpf = _controllers[3].text;
+      String phone = _controllers[4].text;
+      String birthday = _controllers[5].text;
       UserCredential credential = await _auth.createUserWithEmailAndPassword(email: email, password: password);
       await createFirestore(credential.user!.uid, name, surname, cpf, phone, birthday, accountType, isformAnswered);
       hasUser(credential.user);
@@ -291,16 +267,16 @@ class _RegisterPageState extends State<RegisterPage> {
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
         case 'invalid-email':
-          notifyAuthError("Email inválido", colortext: Colors.white, colorbar: Colors.red);
+          if(mounted) notifyMessenger(context: context, msg: "Email inválido", colortext: Colors.white, colorbar: Colors.red);
           break;
         case 'weak-password':
-          notifyAuthError("Senha fraca", colortext: Colors.white, colorbar: Colors.red);
+          if(mounted) notifyMessenger(context: context, msg: "Senha fraca", colortext: Colors.white, colorbar: Colors.red);
           break;
         case 'email-already-in-use':
-          notifyAuthError("Já existe uma conta com esse email!", colortext: Colors.white, colorbar: Colors.red);
+          if(mounted) notifyMessenger(context: context, msg: "Já existe uma conta com esse email!", colortext: Colors.white, colorbar: Colors.red);
           break;
         case 'too-many-requests':
-          notifyAuthError("Muitas tentativas, tente novamente mais tarde", colortext: Colors.black, colorbar: Colors.grey);
+          if(mounted) notifyMessenger(context: context, msg: "Muitas tentativas, tente novamente mais tarde", colortext: Colors.black, colorbar: Colors.grey);
           break;
         default:
           debugPrint(e.toString());
