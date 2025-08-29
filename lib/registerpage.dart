@@ -112,7 +112,7 @@ class _RegisterPageState extends State<RegisterPage> {
       icon = Icon(Icons.edit_calendar_rounded);
       readOnly = true;
       onPressed = () async {
-        DateTime? selectedDate = await showDatePicker(keyboardType: TextInputType.datetime, context: context, firstDate: DateTime(1925), lastDate: today, fieldHintText: "mm/dd/aaaa");
+        DateTime? selectedDate = await showDatePicker(keyboardType: TextInputType.text, context: context, firstDate: DateTime(1925), lastDate: today, fieldHintText: "mm/dd/aaaa");
         if (selectedDate != null) {
           var day = selectedDate.day.toString();
           var month = selectedDate.month.toString();

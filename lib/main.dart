@@ -27,7 +27,10 @@ Future<void> main() async {
       if (FirebaseAuth.instance.currentUser != null) {
         final userDoc = db.collection('users').doc(FirebaseAuth.instance.currentUser!.uid);
         await userDoc.get().then((DocumentSnapshot doc) {
-          data = doc.data() as Map<String, dynamic>;
+          if(doc.data() != null) {
+            data = doc.data() as Map<String, dynamic>;
+          }
+          
         }, onError: (e) => debugPrint("[main db call] Error retrieving data $e"));
       }
       runApp(HealthApp(userData: data));
@@ -50,7 +53,7 @@ class HealthApp extends StatelessWidget {
       '/forgotpassword' : (context) => const ForgotPasswordPage(),
     };
   
-    if (user != null) {
+    if (user != null && userData != null) {
       rotas['/home'] = (context) => MainPage(userData: userData);
       debugPrint("[signedInOrSignedOut method] ${userData.toString()}");
       inicio = '/home';
@@ -294,7 +297,7 @@ class _LoginPageState extends State<LoginPage> {
                           setState(() {
                             isLoadingGoogleSignIn = true;
                           });
-                          await loginWithGoogle();
+                          //await loginWithGoogle();
                           setState(() {
                             isLoadingGoogleSignIn = false;
                           });
@@ -310,7 +313,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Text("Não possui conta?", textScaler: TextScaler.linear(1.5),),
-                  TextButton(child: Text("Registrar", style: TextStyle(fontSize: 20),), onPressed: () { Navigator.pushNamed(context, '/register'); },)
+                  TextButton(child: Text("Registrar", style: TextStyle(color: Colors.green, fontSize: 20),), onPressed: () { Navigator.pushNamed(context, '/register'); },)
                 ],
               ),
               Row(mainAxisAlignment: MainAxisAlignment.center,

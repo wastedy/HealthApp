@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -72,6 +71,7 @@ class _HomePageState extends State<HomePage> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(duration: Duration(seconds: 2), behavior: SnackBarBehavior.floating, showCloseIcon: true, content: Text("Primeiro preencha o formulário!", style: TextStyle(color: Colors.black), textScaler: TextScaler.linear(1.2),), backgroundColor: Colors.yellow));
       Navigator.of(context).push(MaterialPageRoute(builder: (context) => FormPage()));
     }
+    //Solicitar agendamento
   }
 
   @override
