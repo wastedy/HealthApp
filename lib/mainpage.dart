@@ -174,9 +174,7 @@ class _FormPageState extends State<FormPage> {
     Map<String, dynamic> data = {};
     for (var index = 0; index < _controllers.length; index++) {
       String question = formFieldsItems[formType]![index]['label'];
-      debugPrint(question);
       final value = _controllers[index].text;
-      debugPrint(value);
       final questionValue = <String, dynamic>{question: value};
       data.addAll(questionValue);
     }
@@ -208,7 +206,7 @@ class _FormPageState extends State<FormPage> {
     return [Text(label), TextFormField(
         controller: controller,
         validator: (value) => formValidator(value: value, inputType: inputType, isRequired: isRequired),
-        onEditingComplete: () => { isFormComplete() },
+        onChanged: (value) => { isFormComplete() },
         decoration: InputDecoration(
           filled: true,
           border: OutlineInputBorder(),
