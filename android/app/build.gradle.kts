@@ -29,7 +29,7 @@ android {
         applicationId = "com.example.appflutter"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdkVersion(36)
+        minSdkVersion(33)
         targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -49,7 +49,6 @@ flutter {
 }
 
 dependencies {
-    //implementation("com.android.application:com.android.application.gradle.plugin:9.0.0-alpha02")
     implementation("com.google.android.gms:play-services-base:18.7.2")
     implementation("com.google.firebase:firebase-database:22.0.0")
 }

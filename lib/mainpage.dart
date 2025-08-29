@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:healthapp/models/form_fields_items.dart';
+import 'package:healthapp/models/form_questions.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key, this.userData});
@@ -64,6 +64,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   //TODO: Schedule page / account page
   //TODO: redesign
+  late double screenHeight = MediaQuery.of(context).size.height;
 
   void isFormAnswered() {
     if (widget.userData!['isformAnswered'] == false) {
@@ -75,40 +76,37 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(padding: EdgeInsetsGeometry.only(top: 20, left: 20, right: 20), 
-        child: Row(
-          children: [
-            FittedBox(child: Text("Seja Bem-Vindo(a),\n${widget.userData!['Name']} ${widget.userData!['Surname']}\n${widget.userData!['Account_Type']}", style: TextStyle(color: Colors.white, fontSize: 40))),
+    return Padding(padding: EdgeInsetsGeometry.only(top: 40, bottom: 20, left: 20, right: 20),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              FittedBox(child: Text("Seja Bem-Vindo(a),\n${widget.userData!['Name']} ${widget.userData!['Surname']}\n${widget.userData!['Account_Type']}", style: TextStyle(color: Colors.white, fontSize: 40))),
 
-          ],
-          ),
-        ),
-
-        Row(children: [
-          Expanded(child: Padding(padding: EdgeInsetsGeometry.only(top: 470, left: 20, right: 20), 
-            child: Text("Primeira vez?\nSolicite o agendamento agora!", style: TextStyle(color: Colors.white, fontSize: 25)),
-            )
-          )
-          ],
-        ),
-
-        Row(children: [
-          Expanded(child:
-            Padding(padding: EdgeInsetsGeometry.symmetric(horizontal: 20), 
-              child: TextButton(onPressed: () async { 
-                  isFormAnswered();
-                },
-                style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.white)), 
-                child: Text("Solicitar Agendamento!", style: TextStyle(color: Colors.black), textScaler: TextScaler.linear(1.4),))
+            ],
             ),
-          )  
-          ],
-        )
+          
 
-        
-      ],
+          Padding(padding: EdgeInsetsGeometry.only(top: screenHeight * 0.50),
+            child: Row(children: [
+              Expanded(child: Text("Primeira vez?\nSolicite o agendamento agora!", style: TextStyle(color: Colors.white, fontSize: 25)),
+                )
+              ],
+            )
+          ),
+
+          Row(children: [
+            Expanded(child: TextButton(onPressed: () async { 
+                    isFormAnswered();
+                  },
+                  style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.white)), 
+                  child: Text("Solicitar Agendamento!", style: TextStyle(color: Colors.black), textScaler: TextScaler.linear(1.4),))
+              ), 
+            ],
+          ),
+          
+        ],
+    )
     );
   }
 }
