@@ -79,7 +79,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   //TODO: Schedule page / account page
   //TODO: redesign
-  late double screenHeight = MediaQuery.of(context).size.height;
+  final headerTextStyle = TextStyle(color: Colors.white, fontSize: 30);
+
 
   void isFormAnswered() {
     if (widget.userData['isformAnswered'] == false) {
@@ -92,37 +93,26 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(padding: EdgeInsetsGeometry.only(top: 40, bottom: 20, left: 20, right: 20),
-      child: ListView(
+    return SingleChildScrollView(
+      child: Column(
         children: [
-          Row(
-            children: [
-              FittedBox(child: Text("Seja Bem-Vindo(a),\n${widget.userData['Name']} ${widget.userData['Surname']}\n${widget.userData['Account_Type']}", style: TextStyle(color: Colors.white, fontSize: 40))),
+          Padding(padding: EdgeInsetsGeometry.only(top: 37)),
+          Center(child: avatarLogoImage(radius: 60, fontSize: 30, backgroundColor: Color.fromRGBO(71, 71, 71, 1))),
+          Padding(padding: EdgeInsetsGeometry.only(bottom: 90)),
+          SizedBox(
+            width: MediaQuery.sizeOf(context).width - 40,
+            height: MediaQuery.sizeOf(context).height - 450,
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text("Seja bem-vindo(a),\n${widget.userData['Name']}", style: headerTextStyle.copyWith(fontSize: 42)),
+              Spacer(flex: 1),
+              Text("Primeira vez?", style: headerTextStyle),
+              Text("Preencha o formulário agora!", style: headerTextStyle.copyWith(fontSize: 28)),
+              TextButton(style: ButtonStyle(fixedSize: WidgetStatePropertyAll(Size(371, 35)), backgroundColor: WidgetStatePropertyAll(Colors.white)), onPressed: isFormAnswered, child: Text("Preencher o formulário", style: TextStyle(color: Colors.black, fontSize: 20)),),
 
-            ],
-            ),
-          
-
-          Padding(padding: EdgeInsetsGeometry.only(top: screenHeight * 0.25),
-            child: Row(children: [
-              Expanded(child: Text("Primeira vez?\nSolicite o agendamento agora!", style: TextStyle(color: Colors.white, fontSize: 25)),
-                )
-              ],
-            )
-          ),
-
-          Row(children: [
-            Expanded(child: TextButton(onPressed: () async { 
-                    isFormAnswered();
-                  },
-                  style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.white)), 
-                  child: Text("Solicitar Agendamento!", style: TextStyle(color: Colors.black), textScaler: TextScaler.linear(1.4),))
-              ), 
-            ],
-          ),
-          
+            ],),
+          )
         ],
-    )
+      ),
     );
   }
 }
