@@ -13,11 +13,15 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final registerformbackgroundcolor = const Color.fromARGB(255, 199, 199, 199);
-  final registerpagebackgroundcolor = Colors.white;
+  final registerformbackgroundcolor = Color.fromARGB(255, 199, 199, 199);
+  final registerpagebackgroundcolor = Color.fromARGB(255, 32, 32, 32);
+  final appbarColor = Color.fromARGB(255, 43, 43, 43);
+  final iconColor = Colors.white;
+  final radioTextStyle = TextStyle(color: Colors.white);
+  final formFieldTextStyle =  TextStyle(color: Colors.black.withAlpha(127));
   final _registerFormKey = GlobalKey<FormState>();
   final _controllers = List.generate(8, (index) => TextEditingController());
-  final filledTextColor = const Color.fromARGB(255, 146, 142, 142);
+  final filledTextColor = Color.fromRGBO(175, 175, 175, 0.21);
   final today = DateTime.now();
   final _auth = FirebaseAuth.instance;
   final _db = FirebaseFirestore.instance;
@@ -77,15 +81,15 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Widget registerPageInputTextFormField({String? onSaved, TextInputType? keyboardType, int? maxLength, required TextEditingController controller, Widget? label, Widget? prefixIcon, String? validator, GestureTapCallback? onTap, String? hintText, required bool obscureText}) { 
-    var icon = Icon(Icons.cancel_outlined);
+    var icon = Icon(Icons.cancel_outlined, color: iconColor,);
     var onPressed = controller.clear;
     var readOnly = false;
     if (validator == "password") {
-      icon = isPasswordVisible ? Icon(Icons.visibility_off) : Icon(Icons.visibility);
+      icon = isPasswordVisible ? Icon(Icons.visibility_off, color: iconColor,) : Icon(Icons.visibility, color: iconColor,);
       onPressed = togglePasswordVisibility;
     }
     if (validator == "birthday") {
-      icon = Icon(Icons.edit_calendar_rounded);
+      icon = Icon(Icons.edit_calendar_rounded, color: iconColor,);
       readOnly = true;
       onPressed = () async {
         DateTime? selectedDate = await showDatePicker(keyboardType: TextInputType.text, context: context, firstDate: DateTime(1925), lastDate: today, fieldHintText: "mm/dd/aaaa");
@@ -124,16 +128,18 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Cadastro"), backgroundColor: const Color.fromARGB(255, 199, 199, 199),),
+      appBar: AppBar(title: Text("Cadastro"), backgroundColor: appbarColor, foregroundColor: Colors.white, scrolledUnderElevation: 0,),
       body: Container(padding: EdgeInsets.symmetric(vertical: 10),
         color: registerpagebackgroundcolor,
         child: SingleChildScrollView(
           child: Center(
             child: Column(
               children: [
-                avatarLogoImage(radius: 80),
-                Container(margin: EdgeInsets.only(top: 20, left: 10, right: 10),
-                  decoration: BoxDecoration(color: registerformbackgroundcolor, borderRadius: BorderRadius.circular(25), border: Border.all(width: 10, color: registerformbackgroundcolor)),
+                avatarLogoImage(radius: 80, fontSize: 25, backgroundColor: Color.fromRGBO(71, 71, 71, 1)),
+                Padding(padding: EdgeInsetsGeometry.only(bottom: 61)),
+                Container(width: MediaQuery.sizeOf(context).width - 40,
+                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(color: appbarColor, borderRadius: BorderRadius.circular(25)),
                   child: Padding(
                     padding: EdgeInsetsGeometry.only(top: 20, bottom: 10), 
                     child: Column(
@@ -143,56 +149,49 @@ class _RegisterPageState extends State<RegisterPage> {
                             children: [
                               Row(mainAxisSize: MainAxisSize.min, spacing: 5,
                                 children: [
-                                  Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.name, prefixIcon: Icon(Icons.person), controller: _controllers[0], obscureText: false, hintText: "Insira seu Nome", label: Text("Nome")),),
-                                  Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.name, controller: _controllers[1], obscureText: false, hintText: "Insira seu Sobrenome", label: Text("Sobrenome"))),
+                                  Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.name, prefixIcon: Icon(Icons.person, color: iconColor,), controller: _controllers[0], obscureText: false, hintText: "Insira seu Nome", label: Text("Nome", style: formFieldTextStyle,)),),
+                                  Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.name, controller: _controllers[1], obscureText: false, hintText: "Insira seu Sobrenome", label: Text("Sobrenome", style: formFieldTextStyle,))),
                                 ],
                               ),
                               Padding(
                                 padding: EdgeInsetsGeometry.symmetric(vertical: 30), 
                                 child: Row(
                                   children: [
-                                    Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.emailAddress, prefixIcon: Icon(Icons.email), validator: 'mail', controller: _controllers[2], obscureText: false, hintText: "exemplo@exemplo.com", label: Text("Email")),)
+                                    Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.emailAddress, prefixIcon: Icon(Icons.email, color: iconColor,), validator: 'mail', controller: _controllers[2], obscureText: false, hintText: "exemplo@exemplo.com", label: Text("Email", style: formFieldTextStyle,)),)
                                   ],
                                 ),
                               ),
                               Padding(padding: EdgeInsetsGeometry.only(bottom: 30), child: 
                                 Row(
                                   children: [
-                                    Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.number, maxLength: 11, prefixIcon: Icon(Icons.south_america_outlined), validator: 'cpf', controller: _controllers[3], obscureText: false, hintText: "000.000.000-00", label: Text("CPF"))),
+                                    Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.number, maxLength: 11, prefixIcon: Icon(Icons.south_america_outlined, color: iconColor,), validator: 'cpf', controller: _controllers[3], obscureText: false, hintText: "000.000.000-00", label: Text("CPF", style: formFieldTextStyle,))),
                                   ],
                                 )
                               ),
                               Row(spacing: 3,
                                 children: [
-                                  SizedBox(width: 210, child: registerPageInputTextFormField(keyboardType: TextInputType.phone, maxLength: 11, prefixIcon: Icon(Icons.phone_android_rounded), validator: 'phone', controller: _controllers[4], obscureText: false, hintText: "(00) 0000-0000", label: Text("Celular"))),
-                                  Expanded(child: registerPageInputTextFormField(validator: 'birthday', controller: _controllers[5], obscureText: false, hintText: "dd/mm/aaaa", label: Text("Data de nasci\nmento")),)
+                                  SizedBox(width: 210, child: registerPageInputTextFormField(keyboardType: TextInputType.phone, maxLength: 11, prefixIcon: Icon(Icons.phone_android_rounded, color: iconColor,), validator: 'phone', controller: _controllers[4], obscureText: false, hintText: "(00) 0000-0000", label: Text("Celular", style: formFieldTextStyle,))),
+                                  Expanded(child: registerPageInputTextFormField(validator: 'birthday', controller: _controllers[5], obscureText: false, hintText: "dd/mm/aaaa", label: Text("Data de nasci\nmento", style: formFieldTextStyle,)),)
                                 ],
                               ),
                               Padding(padding: EdgeInsetsGeometry.only(top: 30), child: 
                                 Row(
                                   children: [
-                                    Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.text, prefixIcon: Icon(Icons.lock), validator: 'password', controller: _controllers[6], obscureText: isPasswordVisible, hintText: "******", label: Text("Senha"))),
+                                    Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.text, prefixIcon: Icon(Icons.lock, color: iconColor,), validator: 'password', controller: _controllers[6], obscureText: isPasswordVisible, hintText: "******", label: Text("Senha", style: formFieldTextStyle,))),
                                   ],
                                 )
                               ),
                               Padding(padding: EdgeInsetsGeometry.only(top: 30), child: 
                                 Row(
                                   children: [
-                                    Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.text, prefixIcon: Icon(Icons.lock), validator: 'password2', controller: _controllers[7], obscureText: true, hintText: "******", label: Text("Confirmar Senha"))),
+                                    Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.text, prefixIcon: Icon(Icons.lock, color: iconColor,), validator: 'password2', controller: _controllers[7], obscureText: true, hintText: "******", label: Text("Confirmar Senha", style: formFieldTextStyle,))),
                                   ],
                                 ),
                               ),
+                              Padding(padding: EdgeInsetsGeometry.only(top: 30)),
                               Padding(
-                                padding: EdgeInsetsGeometry.only(top: 40, left: 20, right: 20),
-                                child: Row(
-                                  children: [
-                                    Expanded(child: Text("Deseja utilizar o aplicativo ou trabalhar com ele?", textScaler: TextScaler.linear(1.3),),),
-                                  ]
-                                ),
-                              ),
-                              Padding(
-                                padding: EdgeInsetsGeometry.symmetric(horizontal: 60),
-                                child: Row(
+                                padding: EdgeInsetsGeometry.symmetric(horizontal: 40),
+                                child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                   children: <Widget>[
                                     RadioGroup<ClientOrWorker>(
                                       groupValue: _accountType,
@@ -202,10 +201,10 @@ class _RegisterPageState extends State<RegisterPage> {
                                         });
                                       }, 
                                       child: Row(children: [
-                                        Radio<ClientOrWorker>(value: ClientOrWorker.client),
-                                        Text("Cliente"),
-                                        Radio<ClientOrWorker>(value: ClientOrWorker.worker),
-                                        Text("Profissional"),
+                                        Radio<ClientOrWorker>(value: ClientOrWorker.client, fillColor: WidgetStatePropertyAll(Colors.white),),
+                                        Text("Cliente", style: radioTextStyle),
+                                        Radio<ClientOrWorker>(value: ClientOrWorker.worker, fillColor: WidgetStatePropertyAll(Colors.white)),
+                                        Text("Profissional", style: radioTextStyle),
                                       ],)
                                     ),
                                   ],
@@ -228,8 +227,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                         isloading = false;
                                       });
                                     }, 
-                                    style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Color.fromARGB(217, 121, 119, 119))), 
-                                    child: Text("Cadastrar!", textScaler: TextScaler.linear(2), style: TextStyle(color: Colors.black),)
+                                    style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Color.fromRGBO(30, 255, 0, 0.5))), 
+                                    child: Text("Cadastrar!", style: TextStyle(fontSize: 30, color: Colors.white),)
                                   )
                                 ),
                               ),

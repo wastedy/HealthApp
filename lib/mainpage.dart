@@ -5,17 +5,32 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:healthapp/main.dart';
 import 'package:healthapp/models/form_questions.dart';
 
+class UpdatePage extends StatefulWidget {
+  const UpdatePage({super.key, required this.user});
+  final User user;
+
+  @override
+  State<UpdatePage> createState() => _UpdatePageState();
+}
+
+class _UpdatePageState extends State<UpdatePage> {
+  @override
+  Widget build(BuildContext context) {
+    return AccountPage();
+  }
+}
+
 class MainPage extends StatefulWidget {
-  const MainPage({super.key, this.userData});
-  final Map<String, dynamic>? userData;
+  const MainPage({super.key, required this.userData});
+  final Map<String, dynamic> userData;
 
   @override
   State<MainPage> createState() => _MainPageState();
 }
 
-class _MainPageState extends State<MainPage> /*with TickerProviderStateMixin<MainPage>*/ {
+class _MainPageState extends State<MainPage> {
   final bottomNavBarColor = Colors.grey.withValues(alpha: 0.2);
-  final backgroundScaffoldColor = Colors.white.withValues(alpha: 0);
+  final backgroundScaffoldColor = Color.fromRGBO(32, 32, 32, 1);
   final selectedItemColor = Colors.cyan.withValues(alpha: 0.8);
   final double iconSize = 60;
   SvgPicture scheduleIcon = SvgPicture.asset("assets/calendar-days-regular-full.svg", width: 60, height: 60);
@@ -39,7 +54,6 @@ class _MainPageState extends State<MainPage> /*with TickerProviderStateMixin<Mai
           decoration: BoxDecoration(
             color: bottomNavBarColor,
             borderRadius: BorderRadius.circular(25),
-
           ),
           child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -57,7 +71,7 @@ class _MainPageState extends State<MainPage> /*with TickerProviderStateMixin<Mai
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.userData});
-  final Map<String, dynamic>? userData;
+  final Map<String, dynamic> userData;
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -68,7 +82,7 @@ class _HomePageState extends State<HomePage> {
   late double screenHeight = MediaQuery.of(context).size.height;
 
   void isFormAnswered() {
-    if (widget.userData!['isformAnswered'] == false) {
+    if (widget.userData['isformAnswered'] == false) {
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(duration: Duration(seconds: 2), behavior: SnackBarBehavior.floating, showCloseIcon: true, content: Text("Primeiro preencha o formulário!", style: TextStyle(color: Colors.black), textScaler: TextScaler.linear(1.2),), backgroundColor: Colors.yellow));
       Navigator.of(context).push(MaterialPageRoute(builder: (context) => FormPage(userData: widget.userData)));
@@ -83,7 +97,7 @@ class _HomePageState extends State<HomePage> {
         children: [
           Row(
             children: [
-              FittedBox(child: Text("Seja Bem-Vindo(a),\n${widget.userData!['Name']} ${widget.userData!['Surname']}\n${widget.userData!['Account_Type']}", style: TextStyle(color: Colors.white, fontSize: 40))),
+              FittedBox(child: Text("Seja Bem-Vindo(a),\n${widget.userData['Name']} ${widget.userData['Surname']}\n${widget.userData['Account_Type']}", style: TextStyle(color: Colors.white, fontSize: 40))),
 
             ],
             ),
@@ -216,6 +230,24 @@ class _FormPageState extends State<FormPage> {
     
   }
 
+  void submitForm() async {
+    setState(() {
+      isLoading = true;
+    });
+    if (_formKey.currentState!.validate()) {
+      if(await sendFormAnswers()) {
+        await Future.delayed(Duration(seconds: 1));
+        if (mounted) Navigator.of(context).pop();
+      }
+      else {
+        if(mounted) notifyMessenger(context: context, msg: "Houve algum erro no envio do formulário", colortext: Colors.white, colorbar: Colors.red);
+      }
+    }
+    setState(() {
+      isLoading = false;
+    });
+  }
+
   String? formValidator({required String? value, required String? inputType, required String isRequired}) {
     if (inputType == 'TextField' && (isRequired == 'true' && value!.isEmpty)) {
       return "Esse campo não pode estar vazio";
@@ -254,23 +286,7 @@ class _FormPageState extends State<FormPage> {
               ),
 
               TextButton(style: ButtonStyle(backgroundColor: isFormValid ? WidgetStatePropertyAll(Colors.green) : WidgetStatePropertyAll(Colors.grey)), 
-                onPressed: () async {
-                  setState(() {
-                    isLoading = true;
-                  });
-                  if (_formKey.currentState!.validate()) {
-                    if(await sendFormAnswers()) {
-                      await Future.delayed(Duration(seconds: 1));
-                      if (context.mounted) Navigator.of(context).pop();
-                    }
-                    else {
-                      if(context.mounted) notifyMessenger(context: context, msg: "Houve algum erro no envio do formulário", colortext: Colors.white, colorbar: Colors.red);
-                    }
-                  }
-                  setState(() {
-                    isLoading = false;
-                  });
-                }, 
+                onPressed: submitForm,
                 child: isLoading ? const CircularProgressIndicator.adaptive() : Text("Enviar", style: TextStyle(color: Colors.black, fontSize: 20),)),
 
             ])

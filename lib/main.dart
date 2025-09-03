@@ -5,7 +5,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'registerpage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'forgotpasswordpage.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'mainpage.dart';
 import 'config/firebase_options.dart';
 
@@ -44,21 +43,25 @@ class HealthApp extends StatelessWidget {
       '/register' : (context) => const RegisterPage(),
       '/forgotpassword' : (context) => const ForgotPasswordPage(),
     };
-  
+
+    final defaultTheme = ThemeData(textTheme: TextTheme().apply(bodyColor: Colors.white, displayColor: Colors.white));
+
     if (user != null && userData != null) {
-      rotas['/home'] = (context) => MainPage(userData: userData);
+      rotas['/home'] = (context) => MainPage(userData: userData!);
       debugPrint("[signedInOrSignedOut method] ${userData.toString()}");
       inicio = '/home';
       return MaterialApp(
         title: "HealthApp",
         initialRoute: inicio,
         routes: rotas,
+        theme: defaultTheme,
       );
     }
     return MaterialApp(
       title: "HealthApp",
       initialRoute: inicio,
       routes: rotas,
+      theme: defaultTheme,
     );
   }
 
@@ -75,25 +78,15 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final backgroundColor = Color.fromARGB(255, 32, 32, 32);
+  final formColor = Color.fromARGB(255, 43, 43, 43);
+  final iconsColor = Colors.white;
+  final inputFieldColor = Color.fromRGBO(175, 175, 175, 0.21);
   final _auth = FirebaseAuth.instance;
   final _loginFormKey = GlobalKey<FormState>();
   final List<TextEditingController> _controllers = List.generate(2, (i) => TextEditingController());
-  final ThemeData lightTheme = ThemeData(
-    brightness: Brightness.light,
-    colorScheme: ColorScheme.light(
-      surface: Colors.white,
-      primary: Colors.purple,
-    )
-  );
-  final ThemeData darkTheme = ThemeData(
-    brightness: Brightness.dark,
-    colorScheme: ColorScheme.dark(
-      surface: Colors.grey.shade900,
-      primary: Colors.blue,
-    )
-  );
-  bool isDarkMode = false;
   User? user;
+  bool isFormValid = true; //change for button react to user changes
   bool isPasswordVisible = true;
   bool isLoadingGoogleSignIn = false;
   bool isLoadingSignIn = false;
@@ -121,6 +114,19 @@ class _LoginPageState extends State<LoginPage> {
     return null;
   }
 
+  void isFormComplete() {
+    if (_loginFormKey.currentState!.validate()) {
+      setState(() {
+        isFormValid = true;
+      });
+    }
+    else {
+      setState(() {
+        isFormValid = false;
+      });
+    }
+  }
+
   void togglePasswordVisibility() {
     setState(() {
       isPasswordVisible = !isPasswordVisible;
@@ -128,22 +134,28 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget loginPageInputTextFormField({required TextEditingController controller, String? labelText, Widget? prefixIcon, required String? validator, String? hintText, required bool obscureText}) { 
-    var icon = Icon(Icons.cancel_outlined);
+    var icon = Icon(Icons.cancel_outlined, color: iconsColor,);
     var onPressed = controller.clear;
     if (validator == "password") {
-      icon = isPasswordVisible ?  Icon(Icons.visibility_off) : Icon(Icons.visibility);
+      icon = isPasswordVisible ?  Icon(Icons.visibility_off, color: iconsColor,) : Icon(Icons.visibility, color: iconsColor,);
       onPressed = togglePasswordVisibility;
     }
     return TextFormField(
       controller: controller,
       validator: (value) => loginFormValidator(value: value, inputType: validator),
       obscureText: obscureText,
+      textAlignVertical: TextAlignVertical.center,
+      style: TextStyle(color: Colors.white),
+      //onChanged: (value) { isFormComplete(); }, change for button react to user changes
       decoration: InputDecoration(
-        labelText: labelText,
+        filled: true,
+        fillColor: inputFieldColor,
+        hintStyle: TextStyle(color: Colors.black.withAlpha(127)),
         prefixIcon: prefixIcon,
         suffixIcon: IconButton(onPressed: onPressed, icon: icon),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(25)),
+        border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.circular(25)),
         hintText: hintText,
+        errorStyle: TextStyle(fontSize: 12)
       ),
     );
   }
@@ -153,8 +165,13 @@ class _LoginPageState extends State<LoginPage> {
       notifyMessenger(context: context, msg: 'Logado com sucesso!', colortext: Colors.white, colorbar: Colors.green);
       
       final userData = await getUserData(user);
-
-      if (mounted) Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => MainPage(userData: userData)));
+      if (userData == null) {
+        if(mounted) notifyMessenger(context: context, msg: 'Logado mas sem dados', colortext: Colors.white, colorbar: Colors.red);
+        if(mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => UpdatePage(user: user)));
+      }
+      else {
+        if (mounted) Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => MainPage(userData: userData)));
+      }
     }
   }
 
@@ -195,57 +212,55 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  Future<void> saveDarkMode(bool isDarkMode) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isDarkMode', isDarkMode);
-  }
-
-  Future<void> loadDarkMode() async {
-    bool? isDarkModeprefs;
-    final prefs = await SharedPreferences.getInstance();
-    isDarkModeprefs = prefs.getBool('isDarkMode');
-    isDarkMode == isDarkModeprefs ? null : toggleDarkMode();
-
-  }
-
-  void toggleDarkMode() {
-    setState(() {
-      isDarkMode = !isDarkMode;
-    });
-    saveDarkMode(isDarkMode);
-  }
-
   @override
   Widget build(BuildContext context) {
-    loadDarkMode();
-    return Theme(data: isDarkMode ? darkTheme : lightTheme, child: Scaffold(
-      body: Center(
-        child: SingleChildScrollView(
-          //padding: EdgeInsets.symmetric(vertical: 0),
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      body: SingleChildScrollView(
+          padding: EdgeInsets.only(top: 153),
           child: Column(
-            children: [
-              Row(mainAxisAlignment: MainAxisAlignment.end,
+            children: <Widget>[
+              Row(mainAxisAlignment: MainAxisAlignment.center, spacing: 10,
                 children: [
-                  IconButton(iconSize: 48, onPressed: toggleDarkMode, icon: isDarkMode ? Icon(Icons.light_mode) : Icon(Icons.dark_mode)),
+                  avatarLogoImage(radius: 25, fontSize: 15, backgroundColor: Color.fromARGB(255, 71, 71, 71)),
+                  Text("HealthApp", textAlign: TextAlign.center, style: TextStyle(fontSize: 36, color: Colors.white),),
                 ],
               ),
-              avatarLogoImage(radius: 80),
-              Text("HealthApp", textAlign: TextAlign.center, textScaler: TextScaler.linear(5)),
+              Padding(padding: EdgeInsetsGeometry.only(top: 41)),
               Form(key: _loginFormKey, child: 
-                Column(
-                  children: <Widget>[
-                    Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20, horizontal: 30), 
-                      child: loginPageInputTextFormField(validator: "mail", obscureText: false, controller: _controllers[0], labelText: "Endereço de email", prefixIcon: Icon(Icons.mail_outline), hintText: "exemplo@exemplo.com")
-                    ),
-                    Padding(
-                      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 30), 
-                      child: loginPageInputTextFormField(validator: "password", obscureText: isPasswordVisible, controller: _controllers[1], labelText: "Senha", prefixIcon: Icon(Icons.lock_outline))
-                    ),
-                    Padding(
-                      padding: EdgeInsetsGeometry.symmetric(vertical: 20),
-                      child: isLoadingSignIn ? const CircularProgressIndicator.adaptive(padding: EdgeInsets.all(6),) : SizedBox(
-                        width: 350, 
+                Container(
+                  padding: EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+                  decoration: BoxDecoration(color: formColor, borderRadius: BorderRadius.circular(25)),
+                  width: MediaQuery.sizeOf(context).width - 50,
+                  height: 357,
+                  child: Column(
+                    children: <Widget>[
+                      loginPageInputTextFormField(validator: "mail", obscureText: false, controller: _controllers[0], hintText: "Endereço de email", prefixIcon: Icon(Icons.mail_outline, color: iconsColor,)),
+                      Padding(padding: EdgeInsetsGeometry.only(top: 25)),
+                      loginPageInputTextFormField(validator: "password", obscureText: isPasswordVisible, controller: _controllers[1], prefixIcon: Icon(Icons.lock_outline, color: iconsColor,), hintText: "Senha"),
+                      Padding(padding: EdgeInsetsGeometry.only(top: 25)),
+                      isLoadingGoogleSignIn ? const CircularProgressIndicator.adaptive(padding: EdgeInsets.all(6),) : SizedBox(
+                        width: 372,
+                        height: 45,
+                        child: FilledButton.icon(
+                          icon: Image.asset('assets/google-icon.png', width: 20, height: 20), 
+                          onPressed: () async {
+                            setState(() {
+                              isLoadingGoogleSignIn = true;
+                            });
+                            //await loginWithGoogle();
+                            setState(() {
+                              isLoadingGoogleSignIn = false;
+                            });
+                          }, 
+                          style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Color.fromARGB(217, 121, 119, 119))), 
+                          label: Text("Entrar com o Google", style: TextStyle(fontSize: 20),)
+                        )
+                      ),
+                      Padding(padding: EdgeInsetsGeometry.only(top: 25)),
+                      isLoadingSignIn ? const CircularProgressIndicator.adaptive(padding: EdgeInsets.all(6),) : SizedBox(
+                        width: 372,
+                        height: 45, 
                         child: FilledButton(
                           onPressed: () async {
                             setState(() {
@@ -258,56 +273,33 @@ class _LoginPageState extends State<LoginPage> {
                               isLoadingSignIn = false;
                             });
                           }, 
-                          style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.green)), 
-                          child: Text("Entrar", style: TextStyle(color: isDarkMode ? Colors.white : Colors.black)))),
-                    ),
-                    isLoadingGoogleSignIn ? const CircularProgressIndicator.adaptive(padding: EdgeInsets.all(6),) : SizedBox(
-                      width: 350, 
-                      child: FilledButton.icon(
-                        icon: Image.asset('assets/google-icon.png', width: 20, height: 20), 
-                        onPressed: () async {
-                          setState(() {
-                            isLoadingGoogleSignIn = true;
-                          });
-                          //await loginWithGoogle();
-                          setState(() {
-                            isLoadingGoogleSignIn = false;
-                          });
-                        }, 
-                        style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Color.fromARGB(217, 121, 119, 119))), 
-                        label: Text("Entrar com o Google", style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),)
-                      )
-                    ),
-
-
-                  ],
+                          style: ButtonStyle(backgroundColor: isFormValid ? WidgetStatePropertyAll(Colors.green) : WidgetStatePropertyAll(Colors.grey)), 
+                          child: Text("Entrar", style: TextStyle(fontSize: 20),))),
+                  
+                    ],
+                  ),
                 )
               ),
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Text("Não possui conta?", textScaler: TextScaler.linear(1.5),),
-                  TextButton(child: Text("Registrar", style: TextStyle(color: Colors.green, fontSize: 20),), onPressed: () { Navigator.pushNamed(context, '/register'); },)
+              Row(mainAxisAlignment: MainAxisAlignment.center, spacing: 0, children: <Widget>[
+                  TextButton(onPressed: () { Navigator.pushNamed(context, '/register'); }, child: Text("Criar uma conta", style: TextStyle(color: const Color.fromARGB(255, 0, 119, 255), fontSize: 23),)),
+                  TextButton(child: Text("Esqueci a senha", style: TextStyle(color: const Color.fromARGB(255, 142, 255, 236), fontSize: 23),), onPressed: () { Navigator.pushNamed(context, '/forgotpassword'); },)
                 ],
               ),
-              Row(mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  TextButton(child: Text("Esqueci a senha", style: TextStyle(fontSize: 20),), onPressed: () => ( Navigator.pushNamed(context, '/forgotpassword') ),),
-                ],
-              ),
+
+
             ],
           )
         )
-      )
-    )
     );
   }
 }
 
-Widget avatarLogoImage({required double? radius}) => CircleAvatar(
+Widget avatarLogoImage({required double? radius, required double? fontSize, required Color? backgroundColor}) => CircleAvatar(
   radius: radius, 
-  backgroundColor: const Color(0xD9D9D9D9), 
+  backgroundColor: backgroundColor, 
   child: Text(
     "Logo", 
-    style: TextStyle(color: Colors.grey, fontSize: 40), 
+    style: TextStyle(color: Colors.white, fontSize: fontSize), 
   )
 );
 
