@@ -54,6 +54,4 @@ formulários.docx
 # Firebase related
 firebase.json
 lib/config/firebase_options.dart
-
-# App related
-/lib/models
+lib/models/form_questions.dart
