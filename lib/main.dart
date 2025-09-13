@@ -45,7 +45,6 @@ class HealthApp extends StatelessWidget {
     };
 
     final defaultTheme = ThemeData(textTheme: TextTheme().apply(bodyColor: Colors.white, displayColor: Colors.white));
-
     if (user != null && userData != null) {
       rotas['/home'] = (context) => MainPage(userData: userData!);
       debugPrint("[signedInOrSignedOut method] ${userData.toString()}");
@@ -167,7 +166,7 @@ class _LoginPageState extends State<LoginPage> {
       final userData = await getUserData(user);
       if (userData == null) {
         if(mounted) notifyMessenger(context: context, msg: 'Logado mas sem dados', colortext: Colors.white, colorbar: Colors.red);
-        if(mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => UpdatePage(user: user)));
+        //if(mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => UpdatePage(user: user)));
       }
       else {
         if (mounted) Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => MainPage(userData: userData)));
@@ -316,4 +315,15 @@ Future<Map<String, dynamic>?> getUserData(User user) async {
     data = doc.data() as Map<String, dynamic>;
   }, onError: (e) => debugPrint("[getUserData method main] Error retrieving data $e"));
   return data;
+}
+
+class UserData {
+  final String name;
+  final String surname;
+  final String mail;
+  final String phone;
+  final String cpf;
+  final String birthday;
+
+  const UserData({required this.name, required this.surname, required this.mail, required this.phone, required this.cpf, required this.birthday});
 }

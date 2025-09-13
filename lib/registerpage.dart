@@ -38,35 +38,6 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  String? registerFormValidator({required String? value, required String? validator}) {
-    if (value == null || value.isEmpty) { return "Esse campo não pode estar vazio"; }
-    if (validator == 'mail' && !value.contains("@")) {
-      return "Insira um email valido";
-    }
-    if (validator == 'password') {
-      if (value.length < 6) {
-        return "Insira uma senha com pelo menos 6 dígitos";
-      }
-    }
-    if (validator == 'password2') {
-      if (value != _controllers[6].text) {
-        return "Senhas não correspondem";
-      }
-    }
-    if (validator == 'cpf') {
-      if (value.length != 11) {
-        return "Insira um cpf valido";
-      }
-    }
-    if (validator == 'phone') {
-      if (value.length != 11) {
-        return "Insira um número valido";
-      }
-    }
-
-    return null;
-  }
-
   void togglePasswordVisibility() {
     setState(() {
       isPasswordVisible = !isPasswordVisible;
@@ -80,7 +51,7 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  Widget registerPageInputTextFormField({String? onSaved, TextInputType? keyboardType, int? maxLength, required TextEditingController controller, Widget? label, Widget? prefixIcon, String? validator, GestureTapCallback? onTap, String? hintText, required bool obscureText}) { 
+  Widget registerPageInputTextFormField({String? onSaved, TextInputType? keyboardType, int? maxLength, required TextEditingController controller, String? label, Widget? prefixIcon, String? validator, GestureTapCallback? onTap, String? hintText, required bool obscureText}) { 
     var icon = Icon(Icons.cancel_outlined, color: iconColor,);
     var onPressed = controller.clear;
     var readOnly = false;
@@ -107,20 +78,22 @@ class _RegisterPageState extends State<RegisterPage> {
     return TextFormField(
       controller: controller,
       buildCounter: (BuildContext context, { int? currentLength, int? maxLength, bool? isFocused }) => null,
-      validator: (value) => registerFormValidator(value: value, validator: validator),
+      validator: (value) => formValidator(value: value, validator: validator, controllers: _controllers),
       obscureText: obscureText,
       onTap: onTap,
       maxLength: maxLength,
       keyboardType: keyboardType,
+      style: TextStyle(color: Colors.white),
       readOnly: readOnly,
       decoration: InputDecoration(
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: BorderSide(color: Colors.green)),
+        hintStyle: formFieldTextStyle,
         filled: true,
         fillColor: filledTextColor,
-        label: label,
         prefixIcon: prefixIcon,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(25)),
         suffixIcon: IconButton(onPressed: onPressed, icon: icon),
-        hintText: hintText,
+        hintText: label,
       ),
     );
   }
@@ -136,8 +109,9 @@ class _RegisterPageState extends State<RegisterPage> {
             child: Column(
               children: [
                 avatarLogoImage(radius: 80, fontSize: 25, backgroundColor: Color.fromRGBO(71, 71, 71, 1)),
-                Padding(padding: EdgeInsetsGeometry.only(bottom: 61)),
+                Padding(padding: EdgeInsetsGeometry.only(bottom: 31)),
                 Container(width: MediaQuery.sizeOf(context).width - 40,
+                  margin: EdgeInsets.symmetric(vertical: 30),
                   padding: EdgeInsets.symmetric(horizontal: 10),
                   decoration: BoxDecoration(color: appbarColor, borderRadius: BorderRadius.circular(25)),
                   child: Padding(
@@ -149,42 +123,42 @@ class _RegisterPageState extends State<RegisterPage> {
                             children: [
                               Row(mainAxisSize: MainAxisSize.min, spacing: 5,
                                 children: [
-                                  Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.name, prefixIcon: Icon(Icons.person, color: iconColor,), controller: _controllers[0], obscureText: false, hintText: "Insira seu Nome", label: Text("Nome", style: formFieldTextStyle,)),),
-                                  Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.name, controller: _controllers[1], obscureText: false, hintText: "Insira seu Sobrenome", label: Text("Sobrenome", style: formFieldTextStyle,))),
+                                  Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.name, prefixIcon: Icon(Icons.person, color: iconColor,), controller: _controllers[0], obscureText: false, hintText: "Insira seu Nome", label: "Nome"),),
+                                  Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.name, controller: _controllers[1], obscureText: false, hintText: "Insira seu Sobrenome", label: "Sobrenome")),
                                 ],
                               ),
                               Padding(
                                 padding: EdgeInsetsGeometry.symmetric(vertical: 30), 
                                 child: Row(
                                   children: [
-                                    Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.emailAddress, prefixIcon: Icon(Icons.email, color: iconColor,), validator: 'mail', controller: _controllers[2], obscureText: false, hintText: "exemplo@exemplo.com", label: Text("Email", style: formFieldTextStyle,)),)
+                                    Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.emailAddress, prefixIcon: Icon(Icons.email, color: iconColor,), validator: 'mail', controller: _controllers[2], obscureText: false, hintText: "exemplo@exemplo.com", label: "Email"),)
                                   ],
                                 ),
                               ),
                               Padding(padding: EdgeInsetsGeometry.only(bottom: 30), child: 
                                 Row(
                                   children: [
-                                    Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.number, maxLength: 11, prefixIcon: Icon(Icons.south_america_outlined, color: iconColor,), validator: 'cpf', controller: _controllers[3], obscureText: false, hintText: "000.000.000-00", label: Text("CPF", style: formFieldTextStyle,))),
+                                    Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.number, maxLength: 11, prefixIcon: Icon(Icons.south_america_outlined, color: iconColor,), validator: 'cpf', controller: _controllers[3], obscureText: false, hintText: "000.000.000-00", label: "CPF")),
                                   ],
                                 )
                               ),
                               Row(spacing: 3,
                                 children: [
-                                  SizedBox(width: 210, child: registerPageInputTextFormField(keyboardType: TextInputType.phone, maxLength: 11, prefixIcon: Icon(Icons.phone_android_rounded, color: iconColor,), validator: 'phone', controller: _controllers[4], obscureText: false, hintText: "(00) 0000-0000", label: Text("Celular", style: formFieldTextStyle,))),
-                                  Expanded(child: registerPageInputTextFormField(validator: 'birthday', controller: _controllers[5], obscureText: false, hintText: "dd/mm/aaaa", label: Text("Data de nasci\nmento", style: formFieldTextStyle,)),)
+                                  SizedBox(width: 210, child: registerPageInputTextFormField(keyboardType: TextInputType.phone, maxLength: 11, prefixIcon: Icon(Icons.phone_android_rounded, color: iconColor,), validator: 'phone', controller: _controllers[4], obscureText: false, hintText: "(00) 0000-0000", label: "Celular")),
+                                  Expanded(child: registerPageInputTextFormField(validator: 'birthday', controller: _controllers[5], obscureText: false, hintText: "dd/mm/aaaa", label: "Data de nasci\nmento"),)
                                 ],
                               ),
                               Padding(padding: EdgeInsetsGeometry.only(top: 30), child: 
                                 Row(
                                   children: [
-                                    Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.text, prefixIcon: Icon(Icons.lock, color: iconColor,), validator: 'password', controller: _controllers[6], obscureText: isPasswordVisible, hintText: "******", label: Text("Senha", style: formFieldTextStyle,))),
+                                    Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.text, prefixIcon: Icon(Icons.lock, color: iconColor,), validator: 'password', controller: _controllers[6], obscureText: isPasswordVisible, hintText: "******", label: "Senha")),
                                   ],
                                 )
                               ),
                               Padding(padding: EdgeInsetsGeometry.only(top: 30), child: 
                                 Row(
                                   children: [
-                                    Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.text, prefixIcon: Icon(Icons.lock, color: iconColor,), validator: 'password2', controller: _controllers[7], obscureText: true, hintText: "******", label: Text("Confirmar Senha", style: formFieldTextStyle,))),
+                                    Expanded(child: registerPageInputTextFormField(keyboardType: TextInputType.text, prefixIcon: Icon(Icons.lock, color: iconColor,), validator: 'password2', controller: _controllers[7], obscureText: true, hintText: "******", label: "Confirmar Senha")),
                                   ],
                                 ),
                               ),
@@ -296,4 +270,33 @@ class _RegisterPageState extends State<RegisterPage> {
       'isformAnswered': isformAnswered,
     });
   }
+}
+
+String? formValidator({required String? value, required String? validator, required List<TextEditingController> controllers}) {
+  if (value == null || value.isEmpty) { return "Esse campo não pode estar vazio"; }
+  if (validator == 'mail' && !value.contains("@") || !value.contains('.') || value[value.length-1].contains('.')) {
+    return "Insira um email valido";
+  }
+  if (validator == 'password') {
+    if (value.length < 6) {
+      return "Insira uma senha com pelo menos 6 dígitos";
+    }
+  }
+  if (validator == 'password2') {
+    if (value != controllers[6].text) {
+      return "Senhas não correspondem";
+    }
+  }
+  if (validator == 'cpf') {
+    if (value.length != 11) {
+      return "Insira um cpf valido";
+    }
+  }
+  if (validator == 'phone') {
+    if (value.length != 11) {
+      return "Insira um número valido";
+    }
+  }
+
+  return null;
 }
