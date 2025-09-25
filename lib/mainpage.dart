@@ -87,12 +87,23 @@ class _HomePageState extends State<HomePage> {
             width: MediaQuery.sizeOf(context).width - 40,
             height: MediaQuery.sizeOf(context).height - 455,
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text("Seja bem-vindo(a),\n${widget.userData['Name']}", style: headerTextStyle.copyWith(fontSize: 42)),
+              FittedBox(
+                child: Text("Seja bem-vindo(a),", style: headerTextStyle.copyWith(fontSize: 42)),
+              ),
+              FittedBox(
+                child: Text("${widget.userData['Name']}", style: headerTextStyle.copyWith(fontSize: 42)),
+              ),
               Spacer(flex: 1),
-              Text("Primeira vez?", style: headerTextStyle),
-              Text("Preencha o formulário agora!", style: headerTextStyle.copyWith(fontSize: 28)),
-              SizedBox(width: MediaQuery.sizeOf(context).width - 40, 
-                child: TextButton(style: ButtonStyle(shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(10))), backgroundColor: WidgetStatePropertyAll(Colors.white)), onPressed: isFormAnswered, child: Text("Preencher o formulário", style: TextStyle(color: Colors.black, fontSize: 20))),
+              FittedBox(
+                child: Text("Primeira vez?", style: headerTextStyle.copyWith(fontSize: 30)),
+              ),
+              
+              FittedBox(child: Text("Preencha o formulário agora!", style: headerTextStyle.copyWith(fontSize: 28),)),
+              
+              Center(
+                child: FittedBox( 
+                  child: TextButton(style: ButtonStyle(shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(10))), backgroundColor: WidgetStatePropertyAll(Colors.white)), onPressed: isFormAnswered, child: Text("Preencher o formulário", style: TextStyle(color: Colors.black, fontSize: 20))),
+                ),
               ),
 
             ],
